@@ -143,6 +143,7 @@ export default function Dashboard() {
   const kpiCards = data ? [
     { title: 'Sessions',     value: data.kpis.sessions.value,           change: data.kpis.sessions.change,           icon: '📊' },
     { title: 'Active Users', value: data.kpis.users.value,              change: data.kpis.users.change,              icon: '👥' },
+    { title: 'New Users',    value: data.kpis.newUsers.value,           change: data.kpis.newUsers.change,           icon: '✨' },
     { title: 'Page Views',   value: data.kpis.pageviews.value,          change: data.kpis.pageviews.change,          icon: '👁️' },
     { title: 'Bounce Rate',  value: data.kpis.bounceRate.value,         change: data.kpis.bounceRate.change,         icon: '↩️', format: 'percentage' },
     { title: 'Avg. Session', value: data.kpis.avgSessionDuration.value, change: data.kpis.avgSessionDuration.change, icon: '⏱️', format: 'duration' },
@@ -308,9 +309,9 @@ export default function Dashboard() {
 
         {/* ── Overview KPIs ──────────────────────────────────────────────── */}
         <SectionLabel>Overview</SectionLabel>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {loading && !data
-            ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
+            ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
             : kpiCards.map((kpi) => <KPICard key={kpi.title} {...kpi} />)}
         </div>
 
@@ -350,6 +351,44 @@ export default function Dashboard() {
         {/* ── Ecommerce ──────────────────────────────────────────────────── */}
         <SectionLabel>Ecommerce</SectionLabel>
         {loading && !data ? <SkeletonChart height={240} /> : data && <AbandonedCartsWidget data={data.abandonedCartsData} />}
+
+        {/* ── Conversions ────────────────────────────────────────────────── */}
+        <SectionLabel>Conversions</SectionLabel>
+        {loading && !data ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        ) : data?.conversionRates && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { title: 'Overall Conv. Rate', scope: 'All platforms', cr: data.conversionRates.overall },
+              { title: 'Web Conv. Rate',     scope: 'Web only',      cr: data.conversionRates.web },
+              { title: 'App Conv. Rate',     scope: 'iOS + Android', cr: data.conversionRates.app },
+            ].map(({ title, scope, cr }) => {
+              const up = cr.change >= 0
+              return (
+                <div key={title} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{title}</p>
+                  <p className="text-xs text-gray-400 mb-3">{scope}</p>
+                  <p className="text-3xl font-bold text-gray-900 tabular-nums mb-2">
+                    {cr.value.toFixed(2)}%
+                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      up ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
+                    }`}>
+                      {up ? '▲' : '▼'} {Math.abs(cr.change).toFixed(1)}%
+                    </span>
+                    <span className="text-xs text-gray-400">vs prev period</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2 tabular-nums">
+                    {cr.conversions.toLocaleString()} conversions · {cr.sessions.toLocaleString()} sessions
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         {/* ── Demographics ───────────────────────────────────────────────── */}
         <SectionLabel>Demographics</SectionLabel>

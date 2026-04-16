@@ -63,6 +63,7 @@ export async function GET(request) {
       kpiCurrent, kpiPrev, timeSeries, topPages, sources,
       platformData, sessionSourcesRaw, streamData,
       cartsOverall, cartsPerDevice, genderData, ageData,
+      platformConvCur, platformConvPrv,
     ] = await Promise.all([
 
       // ── KPI totals: current period ─────────────────────────────────────────
@@ -72,6 +73,8 @@ export async function GET(request) {
           { name: 'sessions' }, { name: 'activeUsers' },
           { name: 'screenPageViews' }, { name: 'bounceRate' },
           { name: 'averageSessionDuration' },
+          { name: 'newUsers' },        // index 5
+          { name: 'conversions' },     // index 6
         ],
       }),
 
@@ -82,6 +85,8 @@ export async function GET(request) {
           { name: 'sessions' }, { name: 'activeUsers' },
           { name: 'screenPageViews' }, { name: 'bounceRate' },
           { name: 'averageSessionDuration' },
+          { name: 'newUsers' },        // index 5
+          { name: 'conversions' },     // index 6
         ],
       }),
 
@@ -171,6 +176,20 @@ export async function GET(request) {
         metrics: [{ name: 'activeUsers' }],
         orderBys: [{ dimension: { dimensionName: 'userAgeBracket' } }],
       }),
+
+      // ── Platform conversions: current period ───────────────────────────────
+      runReport({
+        startDate: currentStart, endDate: currentEnd,
+        dimensions: [{ name: 'platform' }],
+        metrics: [{ name: 'conversions' }, { name: 'sessions' }],
+      }),
+
+      // ── Platform conversions: previous period ──────────────────────────────
+      runReport({
+        startDate: prevStart, endDate: prevEnd,
+        dimensions: [{ name: 'platform' }],
+        metrics: [{ name: 'conversions' }, { name: 'sessions' }],
+      }),
     ])
 
     // ── Process: KPIs ──────────────────────────────────────────────────────
@@ -183,6 +202,64 @@ export async function GET(request) {
       pageviews:          { value: metricVal(cur, 2), change: pctChange(metricVal(cur, 2), metricVal(prv, 2)) },
       bounceRate:         { value: metricVal(cur, 3) * 100, change: pctChange(metricVal(cur, 3), metricVal(prv, 3)) },
       avgSessionDuration: { value: metricVal(cur, 4), change: pctChange(metricVal(cur, 4), metricVal(prv, 4)) },
+      newUsers:           { value: metricVal(cur, 5), change: pctChange(metricVal(cur, 5), metricVal(prv, 5)) },
+    }
+
+    // ── Process: conversion rates ──────────────────────────────────────────
+    // Overall = total conversions / total sessions
+    const curSessions     = metricVal(cur, 0)
+    const prvSessions     = metricVal(prv, 0)
+    const curConversions  = metricVal(cur, 6)
+    const prvConversions  = metricVal(prv, 6)
+    const curOverallRate  = curSessions > 0 ? (curConversions / curSessions) * 100 : 0
+    const prvOverallRate  = prvSessions > 0 ? (prvConversions / prvSessions) * 100 : 0
+
+    // Per-platform helpers
+    function platformRow(report, platform) {
+      return report.rows?.find((r) => r.dimensionValues[0].value === platform)
+    }
+    function convRate(row) {
+      const conv = parseInt(row?.metricValues?.[0]?.value ?? '0', 10)
+      const sess = parseInt(row?.metricValues?.[1]?.value ?? '0', 10)
+      return { conv, sess, rate: sess > 0 ? (conv / sess) * 100 : 0 }
+    }
+
+    // Web
+    const webCur = convRate(platformRow(platformConvCur, 'web'))
+    const webPrv = convRate(platformRow(platformConvPrv, 'web'))
+
+    // App = iOS + Android combined
+    function addPlatforms(report, ...platforms) {
+      let conv = 0, sess = 0
+      platforms.forEach((p) => {
+        const r = platformRow(report, p)
+        conv += parseInt(r?.metricValues?.[0]?.value ?? '0', 10)
+        sess += parseInt(r?.metricValues?.[1]?.value ?? '0', 10)
+      })
+      return { conv, sess, rate: sess > 0 ? (conv / sess) * 100 : 0 }
+    }
+    const appCur = addPlatforms(platformConvCur, 'iOS', 'Android')
+    const appPrv = addPlatforms(platformConvPrv, 'iOS', 'Android')
+
+    const conversionRates = {
+      overall: {
+        value:       curOverallRate,
+        change:      pctChange(curOverallRate, prvOverallRate),
+        conversions: Math.round(curConversions),
+        sessions:    Math.round(curSessions),
+      },
+      web: {
+        value:       webCur.rate,
+        change:      pctChange(webCur.rate, webPrv.rate),
+        conversions: webCur.conv,
+        sessions:    webCur.sess,
+      },
+      app: {
+        value:       appCur.rate,
+        change:      pctChange(appCur.rate, appPrv.rate),
+        conversions: appCur.conv,
+        sessions:    appCur.sess,
+      },
     }
 
     // ── Process: time series ───────────────────────────────────────────────
@@ -290,6 +367,7 @@ export async function GET(request) {
       abandonedCartsData,
       genderBreakdown,
       ageBreakdown,
+      conversionRates,
     })
   } catch (err) {
     console.error('[GA4] API error:', err)
