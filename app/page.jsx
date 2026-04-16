@@ -29,21 +29,14 @@ function today() {
 
 /* ── SACO Logo ────────────────────────────────────────────────────────────── */
 function SacoLogo({ size = 'md' }) {
-  const iconSize = size === 'lg' ? 42 : 34
-  const textLg   = size === 'lg' ? 'text-base' : 'text-sm'
-  const textSm   = size === 'lg' ? 'text-lg'   : 'text-base'
+  const height = size === 'lg' ? 52 : 40
   return (
-    <div className="flex items-center gap-2.5">
-      <svg width={iconSize} height={iconSize} viewBox="0 0 34 34" fill="none">
-        <rect x="1" y="1" width="32" height="32" rx="5" stroke={SACO_NAVY} strokeWidth="2"/>
-        <path d="M17 7 L7 16 H11 V26 H14.5 V20.5 H19.5 V26 H23 V16 H27 L17 7Z" fill={SACO_NAVY}/>
-        <path d="M14.5 26 L14.5 21 Q17 18 19.5 21 L19.5 26" fill="white"/>
-      </svg>
-      <div className="leading-none">
-        <p className={`${textLg} font-bold`} style={{ color: SACO_NAVY, direction: 'rtl' }}>ساكو</p>
-        <p className={`${textSm} font-black tracking-[0.18em]`} style={{ color: SACO_NAVY }}>SACO</p>
-      </div>
-    </div>
+    <img
+      src="/logo.svg"
+      alt="SACO"
+      height={height}
+      style={{ height, width: 'auto' }}
+    />
   )
 }
 

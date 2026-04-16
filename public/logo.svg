@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 54" fill="none">
+  <!-- Outer rounded rectangle border -->
+  <rect x="1.5" y="1.5" width="145" height="51" rx="7" stroke="#1B2965" stroke-width="2.5" fill="white"/>
+
+  <!-- House icon (left side) -->
+  <!-- Roof triangle -->
+  <path d="M25 10 L10 25 H40 Z" fill="#1B2965"/>
+  <!-- House body rectangle -->
+  <rect x="13" y="25" width="24" height="18" fill="#1B2965"/>
+  <!-- Arched doorway (white cutout) -->
+  <path d="M19 43 L19 35 Q25 29.5 31 35 L31 43 Z" fill="white"/>
+
+  <!-- Vertical divider (subtle gap between icon and text) -->
+
+  <!-- Arabic text: ساكو -->
+  <text
+    x="136"
+    y="27"
+    text-anchor="end"
+    font-family="'Segoe UI', Arial, Helvetica, sans-serif"
+    font-size="14.5"
+    font-weight="600"
+    fill="#1B2965"
+  >ساكو</text>
+
+  <!-- Latin text: SACO -->
+  <text
+    x="136"
+    y="44"
+    text-anchor="end"
+    font-family="'Segoe UI', Arial, Helvetica, sans-serif"
+    font-size="15.5"
+    font-weight="800"
+    letter-spacing="3"
+    fill="#1B2965"
+  >SACO</text>
+</svg>
