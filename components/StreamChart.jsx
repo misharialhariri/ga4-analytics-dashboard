@@ -45,7 +45,7 @@ export default function StreamChart({ data }) {
               contentStyle={{ borderRadius: '10px', border: '1px solid #e5e7eb', fontSize: 12 }}
             />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="sessions" name="Sessions" fill="#6366f1"
+            <Bar dataKey="sessions" name="Sessions" fill="#1B2965"
               radius={[0, 4, 4, 0]} maxBarSize={14} />
             <Bar dataKey="users" name="Users" fill="#06b6d4"
               radius={[0, 4, 4, 0]} maxBarSize={14} />

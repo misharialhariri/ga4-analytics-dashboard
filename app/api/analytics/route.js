@@ -73,8 +73,8 @@ export async function GET(request) {
           { name: 'sessions' }, { name: 'activeUsers' },
           { name: 'screenPageViews' }, { name: 'bounceRate' },
           { name: 'averageSessionDuration' },
-          { name: 'newUsers' },        // index 5
-          { name: 'conversions' },     // index 6
+          { name: 'newUsers' },             // index 5
+          { name: 'ecommercePurchases' },   // index 6
         ],
       }),
 
@@ -85,8 +85,8 @@ export async function GET(request) {
           { name: 'sessions' }, { name: 'activeUsers' },
           { name: 'screenPageViews' }, { name: 'bounceRate' },
           { name: 'averageSessionDuration' },
-          { name: 'newUsers' },        // index 5
-          { name: 'conversions' },     // index 6
+          { name: 'newUsers' },             // index 5
+          { name: 'ecommercePurchases' },   // index 6
         ],
       }),
 
@@ -177,18 +177,18 @@ export async function GET(request) {
         orderBys: [{ dimension: { dimensionName: 'userAgeBracket' } }],
       }),
 
-      // ── Platform conversions: current period ───────────────────────────────
+      // ── Platform purchases: current period ────────────────────────────────
       runReport({
         startDate: currentStart, endDate: currentEnd,
         dimensions: [{ name: 'platform' }],
-        metrics: [{ name: 'conversions' }, { name: 'sessions' }],
+        metrics: [{ name: 'ecommercePurchases' }, { name: 'sessions' }],
       }),
 
-      // ── Platform conversions: previous period ──────────────────────────────
+      // ── Platform purchases: previous period ───────────────────────────────
       runReport({
         startDate: prevStart, endDate: prevEnd,
         dimensions: [{ name: 'platform' }],
-        metrics: [{ name: 'conversions' }, { name: 'sessions' }],
+        metrics: [{ name: 'ecommercePurchases' }, { name: 'sessions' }],
       }),
     ])
 
@@ -205,60 +205,59 @@ export async function GET(request) {
       newUsers:           { value: metricVal(cur, 5), change: pctChange(metricVal(cur, 5), metricVal(prv, 5)) },
     }
 
-    // ── Process: conversion rates ──────────────────────────────────────────
-    // Overall = total conversions / total sessions
-    const curSessions     = metricVal(cur, 0)
-    const prvSessions     = metricVal(prv, 0)
-    const curConversions  = metricVal(cur, 6)
-    const prvConversions  = metricVal(prv, 6)
-    const curOverallRate  = curSessions > 0 ? (curConversions / curSessions) * 100 : 0
-    const prvOverallRate  = prvSessions > 0 ? (prvConversions / prvSessions) * 100 : 0
+    // ── Process: conversion rates (purchases / sessions) ──────────────────
+    const curSessions    = metricVal(cur, 0)
+    const prvSessions    = metricVal(prv, 0)
+    const curPurchases   = metricVal(cur, 6)
+    const prvPurchases   = metricVal(prv, 6)
+    const curOverallRate = curSessions > 0 ? (curPurchases / curSessions) * 100 : 0
+    const prvOverallRate = prvSessions > 0 ? (prvPurchases / prvSessions) * 100 : 0
 
     // Per-platform helpers
     function platformRow(report, platform) {
       return report.rows?.find((r) => r.dimensionValues[0].value === platform)
     }
-    function convRate(row) {
-      const conv = parseInt(row?.metricValues?.[0]?.value ?? '0', 10)
-      const sess = parseInt(row?.metricValues?.[1]?.value ?? '0', 10)
-      return { conv, sess, rate: sess > 0 ? (conv / sess) * 100 : 0 }
+    function purchaseRate(row) {
+      const purchases = parseInt(row?.metricValues?.[0]?.value ?? '0', 10)
+      const sess      = parseInt(row?.metricValues?.[1]?.value ?? '0', 10)
+      return { purchases, sess, rate: sess > 0 ? (purchases / sess) * 100 : 0 }
     }
 
     // Web
-    const webCur = convRate(platformRow(platformConvCur, 'web'))
-    const webPrv = convRate(platformRow(platformConvPrv, 'web'))
+    const webCur = purchaseRate(platformRow(platformConvCur, 'web'))
+    const webPrv = purchaseRate(platformRow(platformConvPrv, 'web'))
 
     // App = iOS + Android combined
     function addPlatforms(report, ...platforms) {
-      let conv = 0, sess = 0
+      let purchases = 0, sess = 0
       platforms.forEach((p) => {
         const r = platformRow(report, p)
-        conv += parseInt(r?.metricValues?.[0]?.value ?? '0', 10)
-        sess += parseInt(r?.metricValues?.[1]?.value ?? '0', 10)
+        purchases += parseInt(r?.metricValues?.[0]?.value ?? '0', 10)
+        sess      += parseInt(r?.metricValues?.[1]?.value ?? '0', 10)
       })
-      return { conv, sess, rate: sess > 0 ? (conv / sess) * 100 : 0 }
+      return { purchases, sess, rate: sess > 0 ? (purchases / sess) * 100 : 0 }
     }
     const appCur = addPlatforms(platformConvCur, 'iOS', 'Android')
     const appPrv = addPlatforms(platformConvPrv, 'iOS', 'Android')
 
     const conversionRates = {
       overall: {
-        value:       curOverallRate,
-        change:      pctChange(curOverallRate, prvOverallRate),
-        conversions: Math.round(curConversions),
-        sessions:    Math.round(curSessions),
+        value:     curOverallRate,
+        change:    pctChange(curOverallRate, prvOverallRate),
+        purchases: Math.round(curPurchases),
+        sessions:  Math.round(curSessions),
       },
       web: {
-        value:       webCur.rate,
-        change:      pctChange(webCur.rate, webPrv.rate),
-        conversions: webCur.conv,
-        sessions:    webCur.sess,
+        value:     webCur.rate,
+        change:    pctChange(webCur.rate, webPrv.rate),
+        purchases: webCur.purchases,
+        sessions:  webCur.sess,
       },
       app: {
-        value:       appCur.rate,
-        change:      pctChange(appCur.rate, appPrv.rate),
-        conversions: appCur.conv,
-        sessions:    appCur.sess,
+        value:     appCur.rate,
+        change:    pctChange(appCur.rate, appPrv.rate),
+        purchases: appCur.purchases,
+        sessions:  appCur.sess,
       },
     }
 

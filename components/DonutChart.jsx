@@ -3,8 +3,8 @@
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 const PALETTE = [
-  '#6366f1', '#06b6d4', '#f59e0b', '#10b981',
-  '#f43f5e', '#8b5cf6', '#ec4899', '#14b8a6',
+  '#1B2965', '#2D4499', '#4A6BC0', '#06b6d4',
+  '#f59e0b', '#10b981', '#f43f5e', '#ec4899',
 ]
 
 function renderLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {

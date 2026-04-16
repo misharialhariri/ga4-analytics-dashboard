@@ -15,7 +15,7 @@ const SOURCE_COLORS = {
   'Twitter/X': '#1DA1F2',
   'YouTube':   '#FF0000',
   'LinkedIn':  '#0A66C2',
-  'Direct':    '#6366f1',
+  'Direct':    '#1B2965',
 }
 
 function getColor(source) {

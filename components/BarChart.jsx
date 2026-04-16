@@ -49,7 +49,7 @@ export default function BarChart({ data }) {
           />
           <Bar dataKey="pageviews" radius={[0, 6, 6, 0]} maxBarSize={20}>
             {formatted.map((_, i) => (
-              <Cell key={i} fill={i === 0 ? '#6366f1' : `hsl(${245 + i * 8}, 70%, ${62 + i * 2}%)`} />
+              <Cell key={i} fill={i === 0 ? '#1B2965' : `hsl(${220 + i * 6}, 55%, ${35 + i * 4}%)`} />
             ))}
           </Bar>
         </RechartsBar>

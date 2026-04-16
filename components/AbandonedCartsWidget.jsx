@@ -41,7 +41,7 @@ export default function AbandonedCartsWidget({ data }) {
 
       {/* Overall stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
-        <StatBox label="Add to Cart"  value={data.addToCarts} colorClass="bg-indigo-50" />
+        <StatBox label="Add to Cart"  value={data.addToCarts} colorClass="bg-[#eef0fb]" />
         <StatBox label="Checkouts"    value={data.checkouts}  colorClass="bg-cyan-50" />
         <StatBox label="Purchases"    value={data.purchases}  colorClass="bg-emerald-50" />
         <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-red-50">

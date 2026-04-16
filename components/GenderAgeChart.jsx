@@ -6,13 +6,13 @@ import {
 } from 'recharts'
 
 const GENDER_COLORS = {
-  male:    '#6366f1',
+  male:    '#1B2965',
   female:  '#ec4899',
   unknown: '#9ca3af',
 }
 
 const AGE_PALETTE = [
-  '#6366f1', '#818cf8', '#a5b4fc',
+  '#1B2965', '#2D4499', '#4A6BC0',
   '#06b6d4', '#22d3ee', '#67e8f9',
 ]
 

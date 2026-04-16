@@ -13,6 +13,8 @@ import GenderAgeChart       from '@/components/GenderAgeChart'
 
 const PRESET_RANGES   = [{ label: '7d', value: 7 }, { label: '30d', value: 30 }, { label: '90d', value: 90 }]
 const AUTO_REFRESH_MS = 30 * 60 * 1000
+const SACO_NAVY       = '#1B2965'
+const SACO_NAVY_DARK  = '#152050'
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 function fmtDate(iso) {
@@ -23,6 +25,26 @@ function fmtDate(iso) {
 
 function today() {
   return new Date().toISOString().slice(0, 10)
+}
+
+/* ── SACO Logo ────────────────────────────────────────────────────────────── */
+function SacoLogo({ size = 'md' }) {
+  const iconSize = size === 'lg' ? 42 : 34
+  const textLg   = size === 'lg' ? 'text-base' : 'text-sm'
+  const textSm   = size === 'lg' ? 'text-lg'   : 'text-base'
+  return (
+    <div className="flex items-center gap-2.5">
+      <svg width={iconSize} height={iconSize} viewBox="0 0 34 34" fill="none">
+        <rect x="1" y="1" width="32" height="32" rx="5" stroke={SACO_NAVY} strokeWidth="2"/>
+        <path d="M17 7 L7 16 H11 V26 H14.5 V20.5 H19.5 V26 H23 V16 H27 L17 7Z" fill={SACO_NAVY}/>
+        <path d="M14.5 26 L14.5 21 Q17 18 19.5 21 L19.5 26" fill="white"/>
+      </svg>
+      <div className="leading-none">
+        <p className={`${textLg} font-bold`} style={{ color: SACO_NAVY, direction: 'rtl' }}>ساكو</p>
+        <p className={`${textSm} font-black tracking-[0.18em]`} style={{ color: SACO_NAVY }}>SACO</p>
+      </div>
+    </div>
+  )
 }
 
 /* ── Skeletons ────────────────────────────────────────────────────────────── */
@@ -71,8 +93,6 @@ function IconBtn({ onClick, disabled, title, children }) {
 /* ══════════════════════════════════════════════════════════════════════════ */
 export default function Dashboard() {
   // ── Date range state ─────────────────────────────────────────────────────
-  // activeDateRange drives the actual fetch; inputStart/End are the pending
-  // values in the custom date inputs (not yet applied).
   const [activeDateRange, setActiveDateRange] = useState({ type: 'preset', days: 30 })
   const [showCustom,  setShowCustom]  = useState(false)
   const [inputStart,  setInputStart]  = useState('')
@@ -158,17 +178,10 @@ export default function Dashboard() {
 
       {/* ── Print-only masthead (hidden on screen) ────────────────────────── */}
       <div className="hidden print:block px-8 pt-6 pb-4 border-b border-gray-200 bg-white">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-          <h1 className="text-xl font-bold text-gray-900">GA4 Analytics Dashboard</h1>
+        <div className="flex flex-col items-center gap-2 mb-2">
+          <SacoLogo size="lg" />
         </div>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 text-center">
           {dateRangeLabel} &middot; Exported{' '}
           {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
         </p>
@@ -178,45 +191,55 @@ export default function Dashboard() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-20 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3">
 
-          {/* Row 1: title + controls */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round"
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <h1 className="text-base font-bold text-gray-900">GA4 Analytics</h1>
-              </div>
-              {lastUpdated && (
-                <p className="text-xs text-gray-400 mt-0.5 ml-9">
+          {/* Row 1: info left | SACO logo center | controls right */}
+          <div className="relative flex items-center justify-between">
+
+            {/* Left: date/refresh info */}
+            <div className="min-w-0 flex-1">
+              {lastUpdated ? (
+                <p className="text-xs text-gray-400 truncate">
                   {dateRangeLabel} &middot; updated {lastUpdated.toLocaleTimeString()} &middot; refreshes in {nextRefreshMins}m
                 </p>
+              ) : (
+                <p className="text-xs text-gray-400">Loading…</p>
               )}
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* Center: SACO logo — absolute so it's truly centred */}
+            <div className="absolute left-1/2 -translate-x-1/2">
+              <SacoLogo />
+            </div>
+
+            {/* Right: controls */}
+            <div className="flex items-center gap-2 flex-wrap justify-end flex-1">
               {/* Date range pills */}
               <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
                 {PRESET_RANGES.map(({ label, value }) => (
                   <button key={value} onClick={() => selectPreset(value)}
                     className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${
                       !showCustom && activeDateRange.type === 'preset' && activeDateRange.days === value
-                        ? 'bg-white text-indigo-600 shadow-sm'
+                        ? 'bg-white shadow-sm'
                         : 'text-gray-500 hover:text-gray-700'
-                    }`}>
+                    }`}
+                    style={
+                      !showCustom && activeDateRange.type === 'preset' && activeDateRange.days === value
+                        ? { color: SACO_NAVY }
+                        : {}
+                    }>
                     {label}
                   </button>
                 ))}
                 <button onClick={() => setShowCustom((v) => !v)}
                   className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${
                     showCustom || activeDateRange.type === 'custom'
-                      ? 'bg-white text-indigo-600 shadow-sm'
+                      ? 'bg-white shadow-sm'
                       : 'text-gray-500 hover:text-gray-700'
-                  }`}>
+                  }`}
+                  style={
+                    showCustom || activeDateRange.type === 'custom'
+                      ? { color: SACO_NAVY }
+                      : {}
+                  }>
                   Custom
                 </button>
               </div>
@@ -261,7 +284,8 @@ export default function Dashboard() {
                   max={inputEnd || today()}
                   onChange={(e) => setInputStart(e.target.value)}
                   className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    focus:outline-none focus:ring-2 bg-white"
+                  style={{ '--tw-ring-color': SACO_NAVY }}
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -273,14 +297,17 @@ export default function Dashboard() {
                   max={today()}
                   onChange={(e) => setInputEnd(e.target.value)}
                   className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    focus:outline-none focus:ring-2 bg-white"
+                  style={{ '--tw-ring-color': SACO_NAVY }}
                 />
               </div>
               <button
                 onClick={applyCustom}
                 disabled={!canApply}
-                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40
-                  text-white text-xs font-semibold rounded-lg transition-colors">
+                className="px-4 py-1.5 disabled:opacity-40 text-white text-xs font-semibold rounded-lg transition-colors"
+                style={{ backgroundColor: canApply ? SACO_NAVY : '#9ca3af' }}
+                onMouseEnter={(e) => { if (canApply) e.currentTarget.style.backgroundColor = SACO_NAVY_DARK }}
+                onMouseLeave={(e) => { if (canApply) e.currentTarget.style.backgroundColor = SACO_NAVY }}>
                 Apply
               </button>
               {!canApply && inputStart && inputEnd && (
@@ -318,6 +345,44 @@ export default function Dashboard() {
         {/* Time series */}
         {loading && !data ? <SkeletonChart height={280} /> : data && <LineChart data={data.timeSeriesData} />}
 
+        {/* ── Conversions ────────────────────────────────────────────────── */}
+        <SectionLabel>Conversions</SectionLabel>
+        {loading && !data ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        ) : data?.conversionRates && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { title: 'Overall Conv. Rate', scope: 'All platforms', cr: data.conversionRates.overall },
+              { title: 'Web Conv. Rate',     scope: 'Web only',      cr: data.conversionRates.web },
+              { title: 'App Conv. Rate',     scope: 'iOS + Android', cr: data.conversionRates.app },
+            ].map(({ title, scope, cr }) => {
+              const up = cr.change >= 0
+              return (
+                <div key={title} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{title}</p>
+                  <p className="text-xs text-gray-400 mb-3">{scope}</p>
+                  <p className="text-3xl font-bold tabular-nums mb-2" style={{ color: SACO_NAVY }}>
+                    {cr.value.toFixed(2)}%
+                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      up ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
+                    }`}>
+                      {up ? '▲' : '▼'} {Math.abs(cr.change).toFixed(1)}%
+                    </span>
+                    <span className="text-xs text-gray-400">vs prev period</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2 tabular-nums">
+                    {cr.purchases.toLocaleString()} purchases · {cr.sessions.toLocaleString()} sessions
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
         {/* ── Acquisition ────────────────────────────────────────────────── */}
         <SectionLabel>Acquisition</SectionLabel>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -351,44 +416,6 @@ export default function Dashboard() {
         {/* ── Ecommerce ──────────────────────────────────────────────────── */}
         <SectionLabel>Ecommerce</SectionLabel>
         {loading && !data ? <SkeletonChart height={240} /> : data && <AbandonedCartsWidget data={data.abandonedCartsData} />}
-
-        {/* ── Conversions ────────────────────────────────────────────────── */}
-        <SectionLabel>Conversions</SectionLabel>
-        {loading && !data ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
-          </div>
-        ) : data?.conversionRates && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { title: 'Overall Conv. Rate', scope: 'All platforms', cr: data.conversionRates.overall },
-              { title: 'Web Conv. Rate',     scope: 'Web only',      cr: data.conversionRates.web },
-              { title: 'App Conv. Rate',     scope: 'iOS + Android', cr: data.conversionRates.app },
-            ].map(({ title, scope, cr }) => {
-              const up = cr.change >= 0
-              return (
-                <div key={title} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{title}</p>
-                  <p className="text-xs text-gray-400 mb-3">{scope}</p>
-                  <p className="text-3xl font-bold text-gray-900 tabular-nums mb-2">
-                    {cr.value.toFixed(2)}%
-                  </p>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full ${
-                      up ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
-                    }`}>
-                      {up ? '▲' : '▼'} {Math.abs(cr.change).toFixed(1)}%
-                    </span>
-                    <span className="text-xs text-gray-400">vs prev period</span>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-2 tabular-nums">
-                    {cr.conversions.toLocaleString()} conversions · {cr.sessions.toLocaleString()} sessions
-                  </p>
-                </div>
-              )
-            })}
-          </div>
-        )}
 
         {/* ── Demographics ───────────────────────────────────────────────── */}
         <SectionLabel>Demographics</SectionLabel>

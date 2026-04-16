@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recha
 const PLATFORM_CONFIG = {
   iOS:     { color: '#1c1c1e', icon: '🍎' },
   Android: { color: '#3ddc84', icon: '🤖' },
-  Web:     { color: '#6366f1', icon: '🌐' },
+  Web:     { color: '#1B2965', icon: '🌐' },
   Other:   { color: '#9ca3af', icon: '📱' },
 }
 

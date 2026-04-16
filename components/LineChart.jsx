@@ -48,7 +48,7 @@ export default function LineChart({ data }) {
           <Line
             type="monotone"
             dataKey="sessions"
-            stroke="#6366f1"
+            stroke="#1B2965"
             strokeWidth={2.5}
             dot={false}
             activeDot={{ r: 5, strokeWidth: 0 }}
