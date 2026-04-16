@@ -30,16 +30,33 @@ function normalizeSource(source) {
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
-  const days = Math.min(Math.max(parseInt(searchParams.get('days') || '30', 10), 1), 365)
+  const startParam = searchParams.get('startDate')   // YYYY-MM-DD custom range
+  const endParam   = searchParams.get('endDate')     // YYYY-MM-DD custom range
 
-  // Use 'yesterday' as the end date so we only count fully-processed days.
-  // GA4 UI "Last N days" = N complete days ending yesterday (not including today).
-  // Using 'today' gives N+1 days of partial data and breaks the WoW comparison
-  // because the current and previous periods would be different lengths.
-  const currentStart = `${days}daysAgo`
-  const currentEnd   = 'yesterday'
-  const prevStart    = `${days * 2}daysAgo`
-  const prevEnd      = `${days + 1}daysAgo`
+  let currentStart, currentEnd, prevStart, prevEnd, timeSeriesLimit
+
+  if (startParam && endParam) {
+    // ── Custom date range ────────────────────────────────────────────────────
+    currentStart = startParam
+    currentEnd   = endParam
+    const MS      = 86400000
+    const startMs = new Date(startParam).getTime()
+    const endMs   = new Date(endParam).getTime()
+    timeSeriesLimit = Math.min(Math.round((endMs - startMs) / MS) + 1, 365)
+    // Previous period = same length, immediately before currentStart
+    const prevEndMs   = startMs - MS
+    const prevStartMs = prevEndMs - (timeSeriesLimit - 1) * MS
+    prevEnd   = new Date(prevEndMs).toISOString().slice(0, 10)
+    prevStart = new Date(prevStartMs).toISOString().slice(0, 10)
+  } else {
+    // ── Preset range (NdaysAgo → yesterday = N complete days) ───────────────
+    const days      = Math.min(Math.max(parseInt(searchParams.get('days') || '30', 10), 1), 365)
+    currentStart    = `${days}daysAgo`
+    currentEnd      = 'yesterday'
+    prevStart       = `${days * 2}daysAgo`
+    prevEnd         = `${days + 1}daysAgo`
+    timeSeriesLimit = days
+  }
 
   try {
     const [
@@ -74,7 +91,7 @@ export async function GET(request) {
         dimensions: [{ name: 'date' }],
         metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
         orderBys: [{ dimension: { dimensionName: 'date' } }],
-        limit: days,
+        limit: timeSeriesLimit,
       }),
 
       // ── Top 10 pages ───────────────────────────────────────────────────────
@@ -246,18 +263,19 @@ export async function GET(request) {
     }
 
     // ── Process: gender ────────────────────────────────────────────────────
+    const DEMO_EXCLUDE = new Set(['(not set)', 'unknown', ''])
     const genderBreakdown = (genderData.rows ?? [])
-      .filter((row) => row.dimensionValues[0].value !== '(not set)')
+      .filter((row) => !DEMO_EXCLUDE.has(row.dimensionValues[0].value))
       .map((row) => ({
-        gender: row.dimensionValues[0].value || 'unknown',
+        gender: row.dimensionValues[0].value,
         users:  parseInt(row.metricValues[0].value, 10),
       }))
 
     // ── Process: age brackets ──────────────────────────────────────────────
     const ageBreakdown = (ageData.rows ?? [])
-      .filter((row) => row.dimensionValues[0].value !== '(not set)')
+      .filter((row) => !DEMO_EXCLUDE.has(row.dimensionValues[0].value))
       .map((row) => ({
-        age:   row.dimensionValues[0].value || 'unknown',
+        age:   row.dimensionValues[0].value,
         users: parseInt(row.metricValues[0].value, 10),
       }))
 

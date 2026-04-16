@@ -6,3 +6,33 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* ── Print / PDF export ───────────────────────────────────────────────────── */
+@media print {
+  /* Preserve background colours and chart fills */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Prevent individual chart cards from splitting across pages */
+  .rounded-2xl {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Drop box shadows — cleaner on paper */
+  .shadow-sm {
+    box-shadow: none !important;
+  }
+
+  /* Full-width layout (remove max-width constraint) */
+  .max-w-7xl {
+    max-width: 100% !important;
+  }
+
+  /* Ensure white page background */
+  body {
+    background-color: white !important;
+  }
+}
