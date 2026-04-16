@@ -32,10 +32,14 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const days = Math.min(Math.max(parseInt(searchParams.get('days') || '30', 10), 1), 365)
 
+  // Use 'yesterday' as the end date so we only count fully-processed days.
+  // GA4 UI "Last N days" = N complete days ending yesterday (not including today).
+  // Using 'today' gives N+1 days of partial data and breaks the WoW comparison
+  // because the current and previous periods would be different lengths.
   const currentStart = `${days}daysAgo`
-  const currentEnd = 'today'
-  const prevStart = `${days * 2}daysAgo`
-  const prevEnd = `${days + 1}daysAgo`
+  const currentEnd   = 'yesterday'
+  const prevStart    = `${days * 2}daysAgo`
+  const prevEnd      = `${days + 1}daysAgo`
 
   try {
     const [
