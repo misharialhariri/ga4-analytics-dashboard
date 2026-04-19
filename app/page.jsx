@@ -317,6 +317,12 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* ── Period Comparison ──────────────────────────────────────────── */}
+        <SectionLabel>Period Comparison</SectionLabel>
+        {loading && !data ? <SkeletonChart height={400} /> : data?.periodComparison && (
+          <PeriodComparisonTable data={data.periodComparison} />
+        )}
+
         {/* ── Overview KPIs ──────────────────────────────────────────────── */}
         <SectionLabel>Overview</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -400,12 +406,6 @@ export default function Dashboard() {
         <SectionLabel>Product Performance</SectionLabel>
         {loading && !data ? <SkeletonChart height={320} /> : data && (
           <ProductPerformanceChart data={data.productPerformance} />
-        )}
-
-        {/* ── Period Comparison ──────────────────────────────────────────── */}
-        <SectionLabel>Period Comparison</SectionLabel>
-        {loading && !data ? <SkeletonChart height={400} /> : data?.periodComparison && (
-          <PeriodComparisonTable data={data.periodComparison} />
         )}
 
         {/* ── Demographics ───────────────────────────────────────────────── */}
