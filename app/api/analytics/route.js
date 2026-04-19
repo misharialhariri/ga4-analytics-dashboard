@@ -199,7 +199,7 @@ export async function GET(request) {
         metrics: [
           { name: 'itemRevenue' },
           { name: 'itemsPurchased' },
-          { name: 'addToCarts' },
+          { name: 'itemsAddedToCart' },
         ],
         orderBys: [{ metric: { metricName: 'itemRevenue' }, desc: true }],
         limit: 10,
