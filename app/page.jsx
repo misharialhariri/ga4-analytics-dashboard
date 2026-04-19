@@ -10,7 +10,8 @@ import SocialSourceChart    from '@/components/SocialSourceChart'
 import StreamChart          from '@/components/StreamChart'
 import AbandonedCartsWidget    from '@/components/AbandonedCartsWidget'
 import GenderAgeChart          from '@/components/GenderAgeChart'
-import ProductPerformanceChart from '@/components/ProductPerformanceChart'
+import ProductPerformanceChart  from '@/components/ProductPerformanceChart'
+import PeriodComparisonTable   from '@/components/PeriodComparisonTable'
 
 const PRESET_RANGES   = [{ label: '7d', value: 7 }, { label: '30d', value: 30 }, { label: '90d', value: 90 }]
 const AUTO_REFRESH_MS = 30 * 60 * 1000
@@ -399,6 +400,12 @@ export default function Dashboard() {
         <SectionLabel>Product Performance</SectionLabel>
         {loading && !data ? <SkeletonChart height={320} /> : data && (
           <ProductPerformanceChart data={data.productPerformance} />
+        )}
+
+        {/* ── Period Comparison ──────────────────────────────────────────── */}
+        <SectionLabel>Period Comparison</SectionLabel>
+        {loading && !data ? <SkeletonChart height={400} /> : data?.periodComparison && (
+          <PeriodComparisonTable data={data.periodComparison} />
         )}
 
         {/* ── Demographics ───────────────────────────────────────────────── */}

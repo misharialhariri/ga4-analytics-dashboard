@@ -64,6 +64,7 @@ export async function GET(request) {
       platformData, sessionSourcesRaw, streamData,
       cartsOverall, cartsPerDevice, genderData, ageData,
       platformConvCur, platformConvPrv, productData,
+      cartsPrev, searchCur, searchPrev,
     ] = await Promise.all([
 
       // ── KPI totals: current period ─────────────────────────────────────────
@@ -202,6 +203,39 @@ export async function GET(request) {
         ],
         orderBys: [{ metric: { metricName: 'itemRevenue' }, desc: true }],
         limit: 10,
+      }),
+
+      // ── Abandoned carts: previous period ──────────────────────────────────
+      runReport({
+        startDate: prevStart, endDate: prevEnd,
+        metrics: [
+          { name: 'addToCarts' },
+          { name: 'ecommercePurchases' },
+        ],
+      }),
+
+      // ── Search results event count: current period ─────────────────────────
+      runReport({
+        startDate: currentStart, endDate: currentEnd,
+        metrics: [{ name: 'eventCount' }],
+        dimensionFilter: {
+          filter: {
+            fieldName: 'eventName',
+            stringFilter: { matchType: 'EXACT', value: 'view_search_results' },
+          },
+        },
+      }),
+
+      // ── Search results event count: previous period ────────────────────────
+      runReport({
+        startDate: prevStart, endDate: prevEnd,
+        metrics: [{ name: 'eventCount' }],
+        dimensionFilter: {
+          filter: {
+            fieldName: 'eventName',
+            stringFilter: { matchType: 'EXACT', value: 'view_search_results' },
+          },
+        },
       }),
     ])
 
@@ -381,6 +415,55 @@ export async function GET(request) {
         addToCarts: parseInt(row.metricValues[2].value ?? '0', 10),
       }))
 
+    // ── Process: period comparison ─────────────────────────────────────────
+    function ga4DateToISO(d) {
+      if (d === 'today')     { const t = new Date(); return t.toISOString().slice(0, 10) }
+      if (d === 'yesterday') { const t = new Date(); t.setDate(t.getDate() - 1); return t.toISOString().slice(0, 10) }
+      const m = d.match(/^(\d+)daysAgo$/)
+      if (m) { const t = new Date(); t.setDate(t.getDate() - parseInt(m[1])); return t.toISOString().slice(0, 10) }
+      return d
+    }
+    function fmtPeriod(start, end) {
+      const f = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      return `${f(ga4DateToISO(start))} – ${f(ga4DateToISO(end))}`
+    }
+    function platSessions(report, platform) {
+      const row = platformRow(report, platform)
+      return parseInt(row?.metricValues?.[1]?.value ?? '0', 10)
+    }
+
+    const prevCartsRow      = cartsPrev.rows?.[0]
+    const prevAddToCarts    = parseInt(prevCartsRow?.metricValues?.[0]?.value ?? '0', 10)
+    const prevCartPurchases = parseInt(prevCartsRow?.metricValues?.[1]?.value ?? '0', 10)
+    const prevAbandoned     = Math.max(0, prevAddToCarts - prevCartPurchases)
+    const prevAbandonedRate = prevAddToCarts > 0 ? (prevAbandoned / prevAddToCarts) * 100 : 0
+
+    const curSearchCount  = parseInt(searchCur.rows?.[0]?.metricValues?.[0]?.value  ?? '0', 10)
+    const prevSearchCount = parseInt(searchPrev.rows?.[0]?.metricValues?.[0]?.value ?? '0', 10)
+
+    const periodComparison = {
+      currentLabel:  fmtPeriod(currentStart, currentEnd),
+      previousLabel: fmtPeriod(prevStart, prevEnd),
+      rows: [
+        { label: 'Users',                         current: Math.round(metricVal(cur, 1)),  previous: Math.round(metricVal(prv, 1)),  format: 'number'  },
+        { label: 'Sessions',                      current: Math.round(metricVal(cur, 0)),  previous: Math.round(metricVal(prv, 0)),  format: 'number'  },
+        { label: 'New Users',                     current: Math.round(metricVal(cur, 5)),  previous: Math.round(metricVal(prv, 5)),  format: 'number'  },
+        { label: 'Search Results',                current: curSearchCount,                 previous: prevSearchCount,                format: 'number'  },
+        { label: 'Conversion (Website)',          current: webCur.purchases,               previous: webPrv.purchases,               format: 'number'  },
+        { label: 'Conversion Rate (Website)',     current: webCur.rate,                    previous: webPrv.rate,                    format: 'percent' },
+        { label: 'Total Conversions',             current: Math.round(curPurchases),       previous: Math.round(prvPurchases),       format: 'number'  },
+        { label: 'Total Conversion Rate',         current: curOverallRate,                 previous: prvOverallRate,                 format: 'percent' },
+        { label: 'Conversion (App)',              current: appCur.purchases,               previous: appPrv.purchases,               format: 'number'  },
+        { label: 'Conversion Rate (App)',         current: appCur.rate,                    previous: appPrv.rate,                    format: 'percent' },
+        { label: 'Bounce Rate',                   current: metricVal(cur, 3) * 100,        previous: metricVal(prv, 3) * 100,        format: 'percent' },
+        { label: 'Source Of Traffic (Website)',   current: platSessions(platformConvCur, 'web'),     previous: platSessions(platformConvPrv, 'web'),     format: 'number' },
+        { label: 'Source Of Traffic (iOS)',       current: platSessions(platformConvCur, 'iOS'),     previous: platSessions(platformConvPrv, 'iOS'),     format: 'number' },
+        { label: 'Source Of Traffic (Android)',   current: platSessions(platformConvCur, 'Android'), previous: platSessions(platformConvPrv, 'Android'), format: 'number' },
+        { label: 'Carts Abandonment',             current: totalAbandoned,                 previous: prevAbandoned,                  format: 'number'  },
+        { label: 'Carts Abandonment Rate',        current: totalAddToCarts > 0 ? (totalAbandoned / totalAddToCarts) * 100 : 0, previous: prevAbandonedRate, format: 'percent' },
+      ],
+    }
+
     return NextResponse.json({
       kpis,
       timeSeriesData,
@@ -394,6 +477,7 @@ export async function GET(request) {
       ageBreakdown,
       conversionRates,
       productPerformance,
+      periodComparison,
     })
   } catch (err) {
     console.error('[GA4] API error:', err)
