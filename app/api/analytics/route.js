@@ -63,7 +63,7 @@ export async function GET(request) {
       kpiCurrent, kpiPrev, timeSeries, topPages, sources,
       platformData, sessionSourcesRaw, streamData,
       cartsOverall, cartsPerDevice, genderData, ageData,
-      platformConvCur, platformConvPrv,
+      platformConvCur, platformConvPrv, productData,
     ] = await Promise.all([
 
       // ── KPI totals: current period ─────────────────────────────────────────
@@ -189,6 +189,19 @@ export async function GET(request) {
         startDate: prevStart, endDate: prevEnd,
         dimensions: [{ name: 'platform' }],
         metrics: [{ name: 'ecommercePurchases' }, { name: 'sessions' }],
+      }),
+
+      // ── Top products by revenue ────────────────────────────────────────────
+      runReport({
+        startDate: currentStart, endDate: currentEnd,
+        dimensions: [{ name: 'itemName' }],
+        metrics: [
+          { name: 'itemRevenue' },
+          { name: 'itemsPurchased' },
+          { name: 'addToCarts' },
+        ],
+        orderBys: [{ metric: { metricName: 'itemRevenue' }, desc: true }],
+        limit: 10,
       }),
     ])
 
@@ -355,6 +368,19 @@ export async function GET(request) {
         users: parseInt(row.metricValues[0].value, 10),
       }))
 
+    // ── Process: product performance ──────────────────────────────────────
+    const productPerformance = (productData.rows ?? [])
+      .filter((row) => {
+        const name = row.dimensionValues[0].value
+        return name && name !== '(not set)' && name !== ''
+      })
+      .map((row) => ({
+        name:       row.dimensionValues[0].value,
+        revenue:    parseFloat(row.metricValues[0].value ?? '0'),
+        purchases:  parseInt(row.metricValues[1].value ?? '0', 10),
+        addToCarts: parseInt(row.metricValues[2].value ?? '0', 10),
+      }))
+
     return NextResponse.json({
       kpis,
       timeSeriesData,
@@ -367,6 +393,7 @@ export async function GET(request) {
       genderBreakdown,
       ageBreakdown,
       conversionRates,
+      productPerformance,
     })
   } catch (err) {
     console.error('[GA4] API error:', err)

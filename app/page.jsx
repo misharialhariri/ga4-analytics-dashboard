@@ -8,8 +8,9 @@ import DonutChart           from '@/components/DonutChart'
 import PlatformChart        from '@/components/PlatformChart'
 import SocialSourceChart    from '@/components/SocialSourceChart'
 import StreamChart          from '@/components/StreamChart'
-import AbandonedCartsWidget from '@/components/AbandonedCartsWidget'
-import GenderAgeChart       from '@/components/GenderAgeChart'
+import AbandonedCartsWidget    from '@/components/AbandonedCartsWidget'
+import GenderAgeChart          from '@/components/GenderAgeChart'
+import ProductPerformanceChart from '@/components/ProductPerformanceChart'
 
 const PRESET_RANGES   = [{ label: '7d', value: 7 }, { label: '30d', value: 30 }, { label: '90d', value: 90 }]
 const AUTO_REFRESH_MS = 30 * 60 * 1000
@@ -393,6 +394,12 @@ export default function Dashboard() {
         {/* ── Ecommerce ──────────────────────────────────────────────────── */}
         <SectionLabel>Ecommerce</SectionLabel>
         {loading && !data ? <SkeletonChart height={240} /> : data && <AbandonedCartsWidget data={data.abandonedCartsData} />}
+
+        {/* ── Product Performance ────────────────────────────────────────── */}
+        <SectionLabel>Product Performance</SectionLabel>
+        {loading && !data ? <SkeletonChart height={320} /> : data && (
+          <ProductPerformanceChart data={data.productPerformance} />
+        )}
 
         {/* ── Demographics ───────────────────────────────────────────────── */}
         <SectionLabel>Demographics</SectionLabel>
