@@ -390,10 +390,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* ── Content ────────────────────────────────────────────────────── */}
-        <SectionLabel>Content</SectionLabel>
-        {loading && !data ? <SkeletonChart height={280} /> : data && <BarChart data={data.topPagesData} />}
-
         {/* ── Ecommerce ──────────────────────────────────────────────────── */}
         <SectionLabel>Ecommerce</SectionLabel>
         {loading && !data ? <SkeletonChart height={240} /> : data && <AbandonedCartsWidget data={data.abandonedCartsData} />}
