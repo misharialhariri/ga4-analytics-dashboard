@@ -14,6 +14,7 @@ import AbandonedCartsWidget    from '@/components/AbandonedCartsWidget'
 import GenderAgeChart          from '@/components/GenderAgeChart'
 import ProductPerformanceChart  from '@/components/ProductPerformanceChart'
 import PeriodComparisonTable   from '@/components/PeriodComparisonTable'
+import ExternalMetricsSection  from '@/components/ExternalMetricsSection'
 
 const PRESET_RANGES   = [{ label: '7d', value: 7 }, { label: '30d', value: 30 }, { label: '90d', value: 90 }]
 const AUTO_REFRESH_MS = 30 * 60 * 1000
@@ -112,6 +113,18 @@ function DashboardInner() {
   const [error,       setError]       = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
   const [countdown,   setCountdown]   = useState(AUTO_REFRESH_MS)
+
+  // ── External metrics (Clarity / Play / App Store) ────────────────────────
+  const [extData,    setExtData]    = useState(null)
+  const [extLoading, setExtLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/external-metrics')
+      .then((r) => r.json())
+      .then(setExtData)
+      .catch(console.error)
+      .finally(() => setExtLoading(false))
+  }, [])
 
   // ── Computed label ───────────────────────────────────────────────────────
   const dateRangeLabel = activeDateRange.type === 'custom'
@@ -448,6 +461,15 @@ function DashboardInner() {
         {loading && !data ? <SkeletonChart height={240} /> : data && (
           <GenderAgeChart genderData={data.genderBreakdown} ageData={data.ageBreakdown} />
         )}
+
+        {/* ── App & Performance ──────────────────────────────────────────── */}
+        <SectionLabel>App &amp; Performance</SectionLabel>
+        <ExternalMetricsSection
+          clarity={extData?.clarity}
+          play={extData?.play}
+          appStore={extData?.appStore}
+          loading={extLoading && !extData}
+        />
 
         <p className="text-center text-xs text-gray-400 pb-4 print:hidden">
           Google Analytics 4 · Property 258025001 · auto-refreshes every 30 min
