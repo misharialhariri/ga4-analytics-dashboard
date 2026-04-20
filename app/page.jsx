@@ -12,8 +12,8 @@ import SocialSourceChart    from '@/components/SocialSourceChart'
 import StreamChart          from '@/components/StreamChart'
 import AbandonedCartsWidget    from '@/components/AbandonedCartsWidget'
 import GenderAgeChart          from '@/components/GenderAgeChart'
-import ProductPerformanceChart  from '@/components/ProductPerformanceChart'
 import PeriodComparisonTable   from '@/components/PeriodComparisonTable'
+import PeriodComparisonChart   from '@/components/PeriodComparisonChart'
 import ExternalMetricsSection  from '@/components/ExternalMetricsSection'
 
 const PRESET_RANGES   = [{ label: '7d', value: 7 }, { label: '30d', value: 30 }, { label: '90d', value: 90 }]
@@ -360,15 +360,21 @@ function DashboardInner() {
         {/* ── Period Comparison ──────────────────────────────────────────── */}
         <SectionLabel>Period Comparison</SectionLabel>
         {loading && !data ? <SkeletonChart height={400} /> : data?.periodComparison && (
-          <PeriodComparisonTable data={data.periodComparison} />
+          <>
+            <PeriodComparisonTable data={data.periodComparison} />
+            <PeriodComparisonChart data={data.periodComparison} />
+          </>
         )}
 
         {/* ── Year-over-Year Comparison (monthly history drill-down only) ── */}
         {data?.yoyComparison && (
-          <PeriodComparisonTable
-            data={data.yoyComparison}
-            title="Year-over-Year Comparison (Same Month Last Year)"
-          />
+          <>
+            <PeriodComparisonTable
+              data={data.yoyComparison}
+              title="Year-over-Year Comparison (Same Month Last Year)"
+            />
+            <PeriodComparisonChart data={data.yoyComparison} />
+          </>
         )}
 
         {/* ── Overview KPIs ──────────────────────────────────────────────── */}
@@ -449,12 +455,6 @@ function DashboardInner() {
         {/* ── Ecommerce ──────────────────────────────────────────────────── */}
         <SectionLabel>Ecommerce</SectionLabel>
         {loading && !data ? <SkeletonChart height={240} /> : data && <AbandonedCartsWidget data={data.abandonedCartsData} />}
-
-        {/* ── Product Performance ────────────────────────────────────────── */}
-        <SectionLabel>Product Performance</SectionLabel>
-        {loading && !data ? <SkeletonChart height={320} /> : data && (
-          <ProductPerformanceChart data={data.productPerformance} />
-        )}
 
         {/* ── Demographics ───────────────────────────────────────────────── */}
         <SectionLabel>Demographics</SectionLabel>
