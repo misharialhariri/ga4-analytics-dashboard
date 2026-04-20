@@ -57,9 +57,10 @@ function ChartCard({ title, chartData, currentLabel, previousLabel, yAxisFormatt
   )
 }
 
-const TRAFFIC_LABELS     = ['Users', 'Sessions', 'New Users', 'Search Results']
-const CONVERSION_LABELS  = ['Total Conversions', 'Conversion (Website)', 'Conversion (App)', 'Carts Abandonment']
-const RATE_LABELS        = ['Total Conversion Rate', 'Conversion Rate (Website)', 'Conversion Rate (App)', 'Bounce Rate', 'Carts Abandonment Rate']
+const TRAFFIC_LABELS          = ['Users', 'Sessions', 'New Users', 'Search Results']
+const CONVERSION_LABELS       = ['Total Conversions', 'Conversion (Website)', 'Conversion (App)']
+const CONVERSION_RATE_LABELS  = ['Total Conversion Rate', 'Conversion Rate (Website)', 'Conversion Rate (App)']
+const OTHER_RATE_LABELS       = ['Bounce Rate', 'Carts Abandonment Rate']
 
 const SHORT_NAMES = {
   'Users': 'Users',
@@ -69,7 +70,6 @@ const SHORT_NAMES = {
   'Total Conversions': 'Total Conv.',
   'Conversion (Website)': 'Web Conv.',
   'Conversion (App)': 'App Conv.',
-  'Carts Abandonment': 'Abandoned',
   'Total Conversion Rate': 'Total CR',
   'Conversion Rate (Website)': 'Web CR',
   'Conversion Rate (App)': 'App CR',
@@ -94,6 +94,8 @@ export default function PeriodComparisonChart({ data }) {
     }).filter(Boolean)
   }
 
+  const pct = (v) => `${v}%`
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -110,13 +112,22 @@ export default function PeriodComparisonChart({ data }) {
           previousLabel={previousLabel}
         />
       </div>
-      <ChartCard
-        title="Rates (%) — current vs previous"
-        chartData={toChartData(RATE_LABELS)}
-        currentLabel={currentLabel}
-        previousLabel={previousLabel}
-        yAxisFormatter={(v) => `${v}%`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard
+          title="Conversion Rates (%) — current vs previous"
+          chartData={toChartData(CONVERSION_RATE_LABELS)}
+          currentLabel={currentLabel}
+          previousLabel={previousLabel}
+          yAxisFormatter={pct}
+        />
+        <ChartCard
+          title="Bounce & Cart Abandonment Rate (%) — current vs previous"
+          chartData={toChartData(OTHER_RATE_LABELS)}
+          currentLabel={currentLabel}
+          previousLabel={previousLabel}
+          yAxisFormatter={pct}
+        />
+      </div>
     </div>
   )
 }
