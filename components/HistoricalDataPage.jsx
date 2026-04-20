@@ -221,10 +221,20 @@ export default function HistoricalDataPage({ type }) {
                         <td
                           key={col.key}
                           className={`px-4 py-2.5 text-xs tabular-nums whitespace-nowrap
-                            ${col.key === 'label' ? 'font-semibold text-gray-700' : 'text-gray-600'}
+                            ${col.key === 'label' ? 'font-semibold' : 'text-gray-600'}
                             ${col.align === 'right' ? 'text-right' : 'text-left'}`}
                         >
-                          {col.fmt(row[col.key])}
+                          {col.key === 'label' ? (
+                            <Link
+                              href={`/?startDate=${row.startDate}&endDate=${row.endDate}`}
+                              className="hover:underline underline-offset-2 transition-opacity hover:opacity-75"
+                              style={{ color: SACO_NAVY }}
+                            >
+                              {row.label}
+                            </Link>
+                          ) : (
+                            col.fmt(row[col.key])
+                          )}
                         </td>
                       ))}
                     </tr>

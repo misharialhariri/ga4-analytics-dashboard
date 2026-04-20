@@ -5,6 +5,17 @@ export const dynamic = 'force-dynamic'
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
+function monthToDateRange(ym) {
+  const year  = parseInt(ym.slice(0, 4))
+  const month = parseInt(ym.slice(4)) - 1   // 0-indexed
+  const startDate = new Date(Date.UTC(year, month, 1))
+  const endDate   = new Date(Date.UTC(year, month + 1, 0))  // last day of month
+  return {
+    startDate: startDate.toISOString().slice(0, 10),
+    endDate:   endDate.toISOString().slice(0, 10),
+  }
+}
+
 export async function GET() {
   try {
     const report = await runReport({
@@ -30,9 +41,12 @@ export async function GET() {
       const monthIdx  = parseInt(ym.slice(4)) - 1
       const sessions  = parseInt(row.metricValues[0].value, 10)
       const purchases = parseInt(row.metricValues[6].value, 10)
+      const { startDate, endDate } = monthToDateRange(ym)
       return {
         period:             ym,
         label:              `${MONTHS[monthIdx]} ${year}`,
+        startDate,
+        endDate,
         sessions,
         users:              parseInt(row.metricValues[1].value, 10),
         newUsers:           parseInt(row.metricValues[2].value, 10),
