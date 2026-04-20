@@ -8,25 +8,50 @@ export const dynamic = 'force-dynamic'
 const gunzipAsync = promisify(gunzip)
 
 // ── Microsoft Clarity ──────────────────────────────────────────────────────
+// Token generated in Clarity → Settings → Data Export → Generate New API Token
 async function fetchClarityData() {
-  const projectId = process.env.CLARITY_PROJECT_ID
-  const apiToken  = process.env.CLARITY_API_TOKEN
-  if (!projectId || !apiToken) return { configured: false }
+  const apiToken = process.env.CLARITY_API_TOKEN
+  if (!apiToken) return { configured: false }
 
+  // Data Export API: supports numOfDays = 1, 2, or 3
   const res = await fetch(
-    `https://www.clarity.ms/api/v1/${projectId}/metric`,
+    'https://www.clarity.ms/export-data/api/v1/project-live-insights?numOfDays=3',
     { headers: { Authorization: `Bearer ${apiToken}` } }
   )
   if (!res.ok) throw new Error(`Clarity API ${res.status}: ${await res.text()}`)
 
-  const d             = await res.json()
-  const totalSessions = d.totalSessionCount ?? 0
-  const jsErrors      = d.jsErrorCount      ?? 0
+  const data = await res.json()
+
+  // Response is an array of metric objects: [{ metricName, information: [...] }]
+  // Find total session count and JS error count across all metrics
+  let totalSessions = 0
+  let jsErrors      = 0
+
+  const metrics = Array.isArray(data) ? data : (data.metrics ?? [])
+  for (const item of metrics) {
+    const name = (item.metricName ?? '').toLowerCase()
+    const info = Array.isArray(item.information) ? item.information[0] : item
+
+    if (name.includes('session') || name === '') {
+      totalSessions = info?.totalSessionCount ?? info?.sessionCount ?? totalSessions
+    }
+    if (name.includes('error') || name.includes('jserror')) {
+      jsErrors = info?.totalSessionCount ?? info?.sessionCount ?? info?.errorCount ?? jsErrors
+    }
+  }
+
+  // Fallback: if flat object (single metric row)
+  if (totalSessions === 0 && !Array.isArray(data)) {
+    totalSessions = data.totalSessionCount ?? data.sessionCount ?? 0
+    jsErrors      = data.jsErrorCount      ?? data.errorCount   ?? 0
+  }
+
   return {
     configured:    true,
     errorRate:     totalSessions > 0 ? (jsErrors / totalSessions) * 100 : 0,
     jsErrors,
     totalSessions,
+    raw:           metrics.map((m) => m.metricName), // helps debug available metric names
   }
 }
 
