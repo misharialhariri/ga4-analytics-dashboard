@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import KPICard              from '@/components/KPICard'
 import LineChart            from '@/components/LineChart'
 import BarChart             from '@/components/BarChart'
@@ -180,6 +181,19 @@ export default function Dashboard() {
       {/* ── Screen header (hidden on print) ───────────────────────────────── */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-20 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3">
+
+          {/* Row 0: page navigation */}
+          <div className="flex items-center gap-5 pb-2 border-b border-gray-100">
+            <span className="text-xs font-bold" style={{ color: SACO_NAVY }}>Overview</span>
+            <Link href="/historical/weekly"
+              className="text-xs font-medium text-gray-400 hover:text-gray-700 transition-colors">
+              Weekly History
+            </Link>
+            <Link href="/historical/monthly"
+              className="text-xs font-medium text-gray-400 hover:text-gray-700 transition-colors">
+              Monthly History
+            </Link>
+          </div>
 
           {/* Row 1: info left | SACO logo center | controls right */}
           <div className="relative flex items-center justify-between">
