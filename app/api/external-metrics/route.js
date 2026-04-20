@@ -13,7 +13,6 @@ async function fetchClarityData() {
   const apiToken = process.env.CLARITY_API_TOKEN
   if (!apiToken) return { configured: false }
 
-  // Data Export API: supports numOfDays = 1, 2, or 3
   const res = await fetch(
     'https://www.clarity.ms/export-data/api/v1/project-live-insights?numOfDays=3',
     { headers: { Authorization: `Bearer ${apiToken}` } }
@@ -22,36 +21,47 @@ async function fetchClarityData() {
 
   const data = await res.json()
 
-  // Response is an array of metric objects: [{ metricName, information: [...] }]
-  // Find total session count and JS error count across all metrics
-  let totalSessions = 0
-  let jsErrors      = 0
+  // Flatten all information objects across all metric rows
+  const items = Array.isArray(data) ? data : [data]
+  let totalSessions  = 0
+  let errorSessions  = 0
+  let jsErrors       = 0
 
-  const metrics = Array.isArray(data) ? data : (data.metrics ?? [])
-  for (const item of metrics) {
-    const name = (item.metricName ?? '').toLowerCase()
-    const info = Array.isArray(item.information) ? item.information[0] : item
-
-    if (name.includes('session') || name === '') {
-      totalSessions = info?.totalSessionCount ?? info?.sessionCount ?? totalSessions
-    }
-    if (name.includes('error') || name.includes('jserror')) {
-      jsErrors = info?.totalSessionCount ?? info?.sessionCount ?? info?.errorCount ?? jsErrors
+  for (const item of items) {
+    const infoList = Array.isArray(item.information) ? item.information : [item]
+    for (const info of infoList) {
+      for (const [key, val] of Object.entries(info ?? {})) {
+        const k = key.toLowerCase()
+        const v = typeof val === 'number' ? val : (parseInt(val, 10) || 0)
+        // Pick the largest session count found (human sessions, not bots)
+        if ((k === 'totalsessioncount' || k === 'sessioncount') && v > totalSessions) {
+          totalSessions = v
+        }
+        // Sessions that had at least one JS error
+        if (k.includes('jserror') && k.includes('session')) {
+          if (v > errorSessions) errorSessions = v
+        }
+        // Total JS error event count (fallback)
+        if ((k === 'jserrorcount' || k === 'totalerrorcount' || k === 'errorcount') && v > jsErrors) {
+          jsErrors = v
+        }
+      }
     }
   }
 
-  // Fallback: if flat object (single metric row)
-  if (totalSessions === 0 && !Array.isArray(data)) {
-    totalSessions = data.totalSessionCount ?? data.sessionCount ?? 0
-    jsErrors      = data.jsErrorCount      ?? data.errorCount   ?? 0
-  }
+  const numerator = errorSessions > 0 ? errorSessions : jsErrors
+  const errorRate = totalSessions > 0 ? (numerator / totalSessions) * 100 : 0
 
   return {
-    configured:    true,
-    errorRate:     totalSessions > 0 ? (jsErrors / totalSessions) * 100 : 0,
+    configured: true,
+    errorRate,
+    errorSessions,
     jsErrors,
     totalSessions,
-    raw:           metrics.map((m) => m.metricName), // helps debug available metric names
+    // kept for debugging — remove once confirmed working
+    _availableKeys: items.flatMap((i) =>
+      (Array.isArray(i.information) ? i.information : [i]).flatMap((o) => Object.keys(o ?? {}))
+    ),
   }
 }
 
