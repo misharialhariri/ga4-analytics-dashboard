@@ -93,6 +93,7 @@ function DashboardInner() {
   const searchParams = useSearchParams()
   const urlStart = searchParams.get('startDate')
   const urlEnd   = searchParams.get('endDate')
+  const urlYoy   = searchParams.get('yoy') === '1'
 
   // ── Date range state ─────────────────────────────────────────────────────
   const [activeDateRange, setActiveDateRange] = useState(
@@ -100,6 +101,7 @@ function DashboardInner() {
       ? { type: 'custom', start: urlStart, end: urlEnd }
       : { type: 'preset', days: 30 }
   )
+  const [showYoy, setShowYoy] = useState(urlYoy)
   const [showCustom,  setShowCustom]  = useState(false)
   const [inputStart,  setInputStart]  = useState('')
   const [inputEnd,    setInputEnd]    = useState('')
@@ -118,8 +120,9 @@ function DashboardInner() {
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
+    const yoySuffix = showYoy && activeDateRange.type === 'custom' ? '&yoy=1' : ''
     const url = activeDateRange.type === 'custom'
-      ? `/api/analytics?startDate=${activeDateRange.start}&endDate=${activeDateRange.end}`
+      ? `/api/analytics?startDate=${activeDateRange.start}&endDate=${activeDateRange.end}${yoySuffix}`
       : `/api/analytics?days=${activeDateRange.days}`
 
     setLoading(true)
@@ -138,7 +141,7 @@ function DashboardInner() {
     } finally {
       setLoading(false)
     }
-  }, [activeDateRange])
+  }, [activeDateRange, showYoy])
 
   useEffect(() => { fetchData() },                             [fetchData])
   useEffect(() => { const t = setInterval(fetchData, AUTO_REFRESH_MS); return () => clearInterval(t) }, [fetchData])
@@ -345,6 +348,14 @@ function DashboardInner() {
         <SectionLabel>Period Comparison</SectionLabel>
         {loading && !data ? <SkeletonChart height={400} /> : data?.periodComparison && (
           <PeriodComparisonTable data={data.periodComparison} />
+        )}
+
+        {/* ── Year-over-Year Comparison (monthly history drill-down only) ── */}
+        {data?.yoyComparison && (
+          <PeriodComparisonTable
+            data={data.yoyComparison}
+            title="Year-over-Year Comparison (Same Month Last Year)"
+          />
         )}
 
         {/* ── Overview KPIs ──────────────────────────────────────────────── */}

@@ -226,7 +226,7 @@ export default function HistoricalDataPage({ type }) {
                         >
                           {col.key === 'label' ? (
                             <Link
-                              href={`/?startDate=${row.startDate}&endDate=${row.endDate}`}
+                              href={`/?startDate=${row.startDate}&endDate=${row.endDate}${isWeekly ? '' : '&yoy=1'}`}
                               className="hover:underline underline-offset-2 transition-opacity hover:opacity-75"
                               style={{ color: SACO_NAVY }}
                             >

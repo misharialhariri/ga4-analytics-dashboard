@@ -32,8 +32,9 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const startParam = searchParams.get('startDate')   // YYYY-MM-DD custom range
   const endParam   = searchParams.get('endDate')     // YYYY-MM-DD custom range
+  const yoyParam   = searchParams.get('yoy')         // '1' = also fetch same month last year
 
-  let currentStart, currentEnd, prevStart, prevEnd, timeSeriesLimit
+  let currentStart, currentEnd, prevStart, prevEnd, timeSeriesLimit, yoyStart, yoyEnd
 
   if (startParam && endParam) {
     // ── Custom date range ────────────────────────────────────────────────────
@@ -48,6 +49,13 @@ export async function GET(request) {
     const prevStartMs = prevEndMs - (timeSeriesLimit - 1) * MS
     prevEnd   = new Date(prevEndMs).toISOString().slice(0, 10)
     prevStart = new Date(prevStartMs).toISOString().slice(0, 10)
+    // Year-over-year = same date range one year prior
+    if (yoyParam === '1') {
+      const yS = new Date(startParam); yS.setFullYear(yS.getFullYear() - 1)
+      const yE = new Date(endParam);   yE.setFullYear(yE.getFullYear() - 1)
+      yoyStart = yS.toISOString().slice(0, 10)
+      yoyEnd   = yE.toISOString().slice(0, 10)
+    }
   } else {
     // ── Preset range (NdaysAgo → yesterday = N complete days) ───────────────
     const days      = Math.min(Math.max(parseInt(searchParams.get('days') || '30', 10), 1), 365)
@@ -59,13 +67,7 @@ export async function GET(request) {
   }
 
   try {
-    const [
-      kpiCurrent, kpiPrev, timeSeries, topPages, sources,
-      platformData, sessionSourcesRaw, streamData,
-      cartsOverall, cartsPerDevice, genderData, ageData,
-      platformConvCur, platformConvPrv, productData,
-      cartsPrev, searchCur, searchPrev,
-    ] = await Promise.all([
+    const baseResults = await Promise.all([
 
       // ── KPI totals: current period ─────────────────────────────────────────
       runReport({
@@ -238,6 +240,49 @@ export async function GET(request) {
         },
       }),
     ])
+
+    const [
+      kpiCurrent, kpiPrev, timeSeries, topPages, sources,
+      platformData, sessionSourcesRaw, streamData,
+      cartsOverall, cartsPerDevice, genderData, ageData,
+      platformConvCur, platformConvPrv, productData,
+      cartsPrev, searchCur, searchPrev,
+    ] = baseResults
+
+    // ── Year-over-year queries (only when yoy=1 on a custom range) ─────────
+    const [yoyKpi, yoyPlatformConv, yoyCarts, yoySearch] = yoyStart
+      ? await Promise.all([
+          runReport({
+            startDate: yoyStart, endDate: yoyEnd,
+            metrics: [
+              { name: 'sessions' }, { name: 'activeUsers' },
+              { name: 'screenPageViews' }, { name: 'bounceRate' },
+              { name: 'averageSessionDuration' },
+              { name: 'newUsers' },
+              { name: 'ecommercePurchases' },
+            ],
+          }),
+          runReport({
+            startDate: yoyStart, endDate: yoyEnd,
+            dimensions: [{ name: 'platform' }],
+            metrics: [{ name: 'ecommercePurchases' }, { name: 'sessions' }],
+          }),
+          runReport({
+            startDate: yoyStart, endDate: yoyEnd,
+            metrics: [{ name: 'addToCarts' }, { name: 'ecommercePurchases' }],
+          }),
+          runReport({
+            startDate: yoyStart, endDate: yoyEnd,
+            metrics: [{ name: 'eventCount' }],
+            dimensionFilter: {
+              filter: {
+                fieldName: 'eventName',
+                stringFilter: { matchType: 'EXACT', value: 'view_search_results' },
+              },
+            },
+          }),
+        ])
+      : [null, null, null, null]
 
     // ── Process: KPIs ──────────────────────────────────────────────────────
     const cur = kpiCurrent.rows?.[0]
@@ -464,6 +509,48 @@ export async function GET(request) {
       ],
     }
 
+    // ── Process: year-over-year comparison ────────────────────────────────
+    let yoyComparison = null
+    if (yoyStart && yoyKpi) {
+      const yoy    = yoyKpi.rows?.[0]
+      const yoySess = parseFloat(yoy?.metricValues?.[0]?.value ?? '0')
+      const yoyPurch = parseFloat(yoy?.metricValues?.[6]?.value ?? '0')
+      const yoyOverallRate = yoySess > 0 ? (yoyPurch / yoySess) * 100 : 0
+
+      const yoyWebCur = purchaseRate(platformRow(yoyPlatformConv, 'web'))
+      const yoyAppCur = addPlatforms(yoyPlatformConv, 'iOS', 'Android')
+
+      const yoyCartsRow  = yoyCarts?.rows?.[0]
+      const yoyAdds      = parseInt(yoyCartsRow?.metricValues?.[0]?.value ?? '0', 10)
+      const yoyCartPurch = parseInt(yoyCartsRow?.metricValues?.[1]?.value ?? '0', 10)
+      const yoyAbandoned = Math.max(0, yoyAdds - yoyCartPurch)
+
+      const yoySearchCount = parseInt(yoySearch?.rows?.[0]?.metricValues?.[0]?.value ?? '0', 10)
+
+      yoyComparison = {
+        currentLabel:  fmtPeriod(currentStart, currentEnd),
+        previousLabel: fmtPeriod(yoyStart, yoyEnd),
+        rows: [
+          { label: 'Users',                         current: Math.round(metricVal(cur, 1)),  previous: Math.round(metricVal(yoy, 1)),  format: 'number'  },
+          { label: 'Sessions',                      current: Math.round(metricVal(cur, 0)),  previous: Math.round(metricVal(yoy, 0)),  format: 'number'  },
+          { label: 'New Users',                     current: Math.round(metricVal(cur, 5)),  previous: Math.round(metricVal(yoy, 5)),  format: 'number'  },
+          { label: 'Search Results',                current: curSearchCount,                 previous: yoySearchCount,                 format: 'number'  },
+          { label: 'Conversion (Website)',          current: webCur.purchases,               previous: yoyWebCur.purchases,            format: 'number'  },
+          { label: 'Conversion Rate (Website)',     current: webCur.rate,                    previous: yoyWebCur.rate,                 format: 'percent' },
+          { label: 'Total Conversions',             current: Math.round(curPurchases),       previous: Math.round(yoyPurch),           format: 'number'  },
+          { label: 'Total Conversion Rate',         current: curOverallRate,                 previous: yoyOverallRate,                 format: 'percent' },
+          { label: 'Conversion (App)',              current: appCur.purchases,               previous: yoyAppCur.purchases,            format: 'number'  },
+          { label: 'Conversion Rate (App)',         current: appCur.rate,                    previous: yoyAppCur.rate,                 format: 'percent' },
+          { label: 'Bounce Rate',                   current: metricVal(cur, 3) * 100,        previous: metricVal(yoy, 3) * 100,        format: 'percent' },
+          { label: 'Source Of Traffic (Website)',   current: platSessions(platformConvCur, 'web'),     previous: platSessions(yoyPlatformConv, 'web'),     format: 'number' },
+          { label: 'Source Of Traffic (iOS)',       current: platSessions(platformConvCur, 'iOS'),     previous: platSessions(yoyPlatformConv, 'iOS'),     format: 'number' },
+          { label: 'Source Of Traffic (Android)',   current: platSessions(platformConvCur, 'Android'), previous: platSessions(yoyPlatformConv, 'Android'), format: 'number' },
+          { label: 'Carts Abandonment',             current: totalAbandoned,                 previous: yoyAbandoned,                   format: 'number'  },
+          { label: 'Carts Abandonment Rate',        current: totalAddToCarts > 0 ? (totalAbandoned / totalAddToCarts) * 100 : 0, previous: yoyAdds > 0 ? (yoyAbandoned / yoyAdds) * 100 : 0, format: 'percent' },
+        ],
+      }
+    }
+
     return NextResponse.json({
       kpis,
       timeSeriesData,
@@ -478,6 +565,7 @@ export async function GET(request) {
       conversionRates,
       productPerformance,
       periodComparison,
+      yoyComparison,
     })
   } catch (err) {
     console.error('[GA4] API error:', err)

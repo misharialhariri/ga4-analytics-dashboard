@@ -26,14 +26,14 @@ function ChangeCell({ current, previous, format }) {
   )
 }
 
-export default function PeriodComparisonTable({ data }) {
+export default function PeriodComparisonTable({ data, title = 'Period Over Period Comparison' }) {
   if (!data) return null
   const { currentLabel, previousLabel, rows } = data
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-700">Period Over Period Comparison</h3>
+        <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
       </div>
 
       <div className="overflow-x-auto">
