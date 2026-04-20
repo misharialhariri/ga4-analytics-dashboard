@@ -216,26 +216,26 @@ export async function GET(request) {
         ],
       }),
 
-      // ── Search results event count: current period ─────────────────────────
+      // ── Search results page views: current period ─────────────────────────
       runReport({
         startDate: currentStart, endDate: currentEnd,
-        metrics: [{ name: 'eventCount' }],
+        metrics: [{ name: 'screenPageViews' }],
         dimensionFilter: {
           filter: {
-            fieldName: 'eventName',
-            stringFilter: { matchType: 'EXACT', value: 'view_search_results' },
+            fieldName: 'pagePathPlusQueryString',
+            stringFilter: { matchType: 'CONTAINS', value: 'SearchResults' },
           },
         },
       }),
 
-      // ── Search results event count: previous period ────────────────────────
+      // ── Search results page views: previous period ────────────────────────
       runReport({
         startDate: prevStart, endDate: prevEnd,
-        metrics: [{ name: 'eventCount' }],
+        metrics: [{ name: 'screenPageViews' }],
         dimensionFilter: {
           filter: {
-            fieldName: 'eventName',
-            stringFilter: { matchType: 'EXACT', value: 'view_search_results' },
+            fieldName: 'pagePathPlusQueryString',
+            stringFilter: { matchType: 'CONTAINS', value: 'SearchResults' },
           },
         },
       }),
@@ -273,11 +273,11 @@ export async function GET(request) {
           }),
           runReport({
             startDate: yoyStart, endDate: yoyEnd,
-            metrics: [{ name: 'eventCount' }],
+            metrics: [{ name: 'screenPageViews' }],
             dimensionFilter: {
               filter: {
-                fieldName: 'eventName',
-                stringFilter: { matchType: 'EXACT', value: 'view_search_results' },
+                fieldName: 'pagePathPlusQueryString',
+                stringFilter: { matchType: 'CONTAINS', value: 'SearchResults' },
               },
             },
           }),
