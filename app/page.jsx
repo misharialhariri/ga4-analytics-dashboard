@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import KPICard              from '@/components/KPICard'
 import LineChart            from '@/components/LineChart'
 import BarChart             from '@/components/BarChart'
@@ -87,9 +88,18 @@ function IconBtn({ onClick, disabled, title, children }) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════ */
-export default function Dashboard() {
+function DashboardInner() {
+  // ── Seed date range from URL params (e.g. when navigating from history pages)
+  const searchParams = useSearchParams()
+  const urlStart = searchParams.get('startDate')
+  const urlEnd   = searchParams.get('endDate')
+
   // ── Date range state ─────────────────────────────────────────────────────
-  const [activeDateRange, setActiveDateRange] = useState({ type: 'preset', days: 30 })
+  const [activeDateRange, setActiveDateRange] = useState(
+    urlStart && urlEnd
+      ? { type: 'custom', start: urlStart, end: urlEnd }
+      : { type: 'preset', days: 30 }
+  )
   const [showCustom,  setShowCustom]  = useState(false)
   const [inputStart,  setInputStart]  = useState('')
   const [inputEnd,    setInputEnd]    = useState('')
@@ -433,5 +443,13 @@ export default function Dashboard() {
         </p>
       </main>
     </div>
+  )
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense>
+      <DashboardInner />
+    </Suspense>
   )
 }
