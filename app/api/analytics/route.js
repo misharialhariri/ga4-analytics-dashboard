@@ -222,8 +222,8 @@ export async function GET(request) {
         metrics: [{ name: 'screenPageViews' }],
         dimensionFilter: {
           filter: {
-            fieldName: 'pagePathPlusQueryString',
-            stringFilter: { matchType: 'CONTAINS', value: 'SearchResults' },
+            fieldName: 'unifiedScreenName',
+            stringFilter: { matchType: 'EXACT', value: 'SearchResults' },
           },
         },
       }),
@@ -234,8 +234,8 @@ export async function GET(request) {
         metrics: [{ name: 'screenPageViews' }],
         dimensionFilter: {
           filter: {
-            fieldName: 'pagePathPlusQueryString',
-            stringFilter: { matchType: 'CONTAINS', value: 'SearchResults' },
+            fieldName: 'unifiedScreenName',
+            stringFilter: { matchType: 'EXACT', value: 'SearchResults' },
           },
         },
       }),
@@ -276,8 +276,8 @@ export async function GET(request) {
             metrics: [{ name: 'screenPageViews' }],
             dimensionFilter: {
               filter: {
-                fieldName: 'pagePathPlusQueryString',
-                stringFilter: { matchType: 'CONTAINS', value: 'SearchResults' },
+                fieldName: 'unifiedScreenName',
+                stringFilter: { matchType: 'EXACT', value: 'SearchResults' },
               },
             },
           }),
