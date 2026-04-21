@@ -15,6 +15,7 @@ import GenderAgeChart          from '@/components/GenderAgeChart'
 import PeriodComparisonTable   from '@/components/PeriodComparisonTable'
 import PeriodComparisonChart   from '@/components/PeriodComparisonChart'
 import ExternalMetricsSection  from '@/components/ExternalMetricsSection'
+import PageSpeedSection        from '@/components/PageSpeedSection'
 
 const PRESET_RANGES   = [{ label: '7d', value: 7 }, { label: '30d', value: 30 }, { label: '90d', value: 90 }]
 const AUTO_REFRESH_MS = 30 * 60 * 1000
@@ -124,6 +125,18 @@ function DashboardInner() {
       .then(setExtData)
       .catch(console.error)
       .finally(() => setExtLoading(false))
+  }, [])
+
+  // ── PageSpeed Insights ────────────────────────────────────────────────────
+  const [psData,    setPsData]    = useState(null)
+  const [psLoading, setPsLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/pagespeed')
+      .then((r) => r.json())
+      .then(setPsData)
+      .catch(console.error)
+      .finally(() => setPsLoading(false))
   }, [])
 
   // ── Computed label ───────────────────────────────────────────────────────
@@ -470,6 +483,10 @@ function DashboardInner() {
           appStore={extData?.appStore}
           loading={extLoading && !extData}
         />
+
+        {/* ── PageSpeed Insights ─────────────────────────────────────────── */}
+        <SectionLabel>PageSpeed Insights</SectionLabel>
+        <PageSpeedSection data={psData} loading={psLoading && !psData} />
 
         <p className="text-center text-xs text-gray-400 pb-4 print:hidden">
           Google Analytics 4 · Property 258025001 · auto-refreshes every 30 min
