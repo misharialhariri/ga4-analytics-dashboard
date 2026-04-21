@@ -486,7 +486,7 @@ function DashboardInner() {
 
         {/* ── PageSpeed Insights ─────────────────────────────────────────── */}
         <SectionLabel>PageSpeed Insights</SectionLabel>
-        <PageSpeedSection data={psData} loading={psLoading && !psData} />
+        <PageSpeedSection data={psData} loading={psLoading} />
 
         <p className="text-center text-xs text-gray-400 pb-4 print:hidden">
           Google Analytics 4 · Property 258025001 · auto-refreshes every 30 min

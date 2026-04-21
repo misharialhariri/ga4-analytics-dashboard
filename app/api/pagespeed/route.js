@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 
-export const revalidate = 3600 // cache for 1 hour
+// force-dynamic: don't pre-render at build time (avoids quota hit during SSG).
+// Individual fetches below use { next: { revalidate: 3600 } } for data caching.
+export const dynamic = 'force-dynamic'
 
 const TARGET_URL = 'https://saco.sa/'
 

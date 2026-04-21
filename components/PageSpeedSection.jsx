@@ -173,12 +173,16 @@ export default function PageSpeedSection({ data, loading }) {
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {loading && !data ? (
+        {loading ? (
           <><Skeleton /><Skeleton /></>
+        ) : !data ? (
+          <p className="text-sm text-gray-400 col-span-2">
+            Could not load PageSpeed data — check server logs.
+          </p>
         ) : (
           <>
-            <StrategyCard label="Mobile"  icon="📱" data={data?.mobile}  />
-            <StrategyCard label="Desktop" icon="🖥️" data={data?.desktop} />
+            <StrategyCard label="Mobile"  icon="📱" data={data.mobile}  />
+            <StrategyCard label="Desktop" icon="🖥️" data={data.desktop} />
           </>
         )}
       </div>
