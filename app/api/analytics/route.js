@@ -500,12 +500,12 @@ export async function GET(request) {
         { label: 'Total Conversion Rate',         current: curOverallRate,                 previous: prvOverallRate,                 format: 'percent' },
         { label: 'Conversion (App)',              current: appCur.purchases,               previous: appPrv.purchases,               format: 'number'  },
         { label: 'Conversion Rate (App)',         current: appCur.rate,                    previous: appPrv.rate,                    format: 'percent' },
-        { label: 'Bounce Rate',                   current: metricVal(cur, 3) * 100,        previous: metricVal(prv, 3) * 100,        format: 'percent' },
+        { label: 'Bounce Rate',                   current: metricVal(cur, 3) * 100,        previous: metricVal(prv, 3) * 100,        format: 'percent', lowerIsBetter: true },
         { label: 'Source Of Traffic (Website)',   current: platSessions(platformConvCur, 'web'),     previous: platSessions(platformConvPrv, 'web'),     format: 'number' },
         { label: 'Source Of Traffic (iOS)',       current: platSessions(platformConvCur, 'iOS'),     previous: platSessions(platformConvPrv, 'iOS'),     format: 'number' },
         { label: 'Source Of Traffic (Android)',   current: platSessions(platformConvCur, 'Android'), previous: platSessions(platformConvPrv, 'Android'), format: 'number' },
-        { label: 'Carts Abandonment',             current: totalAbandoned,                 previous: prevAbandoned,                  format: 'number'  },
-        { label: 'Carts Abandonment Rate',        current: totalAddToCarts > 0 ? (totalAbandoned / totalAddToCarts) * 100 : 0, previous: prevAbandonedRate, format: 'percent' },
+        { label: 'Carts Abandonment',             current: totalAbandoned,                 previous: prevAbandoned,                  format: 'number',  lowerIsBetter: true },
+        { label: 'Carts Abandonment Rate',        current: totalAddToCarts > 0 ? (totalAbandoned / totalAddToCarts) * 100 : 0, previous: prevAbandonedRate, format: 'percent', lowerIsBetter: true },
       ],
     }
 
@@ -541,12 +541,12 @@ export async function GET(request) {
           { label: 'Total Conversion Rate',         current: curOverallRate,                 previous: yoyOverallRate,                 format: 'percent' },
           { label: 'Conversion (App)',              current: appCur.purchases,               previous: yoyAppCur.purchases,            format: 'number'  },
           { label: 'Conversion Rate (App)',         current: appCur.rate,                    previous: yoyAppCur.rate,                 format: 'percent' },
-          { label: 'Bounce Rate',                   current: metricVal(cur, 3) * 100,        previous: metricVal(yoy, 3) * 100,        format: 'percent' },
+          { label: 'Bounce Rate',                   current: metricVal(cur, 3) * 100,        previous: metricVal(yoy, 3) * 100,        format: 'percent', lowerIsBetter: true },
           { label: 'Source Of Traffic (Website)',   current: platSessions(platformConvCur, 'web'),     previous: platSessions(yoyPlatformConv, 'web'),     format: 'number' },
           { label: 'Source Of Traffic (iOS)',       current: platSessions(platformConvCur, 'iOS'),     previous: platSessions(yoyPlatformConv, 'iOS'),     format: 'number' },
           { label: 'Source Of Traffic (Android)',   current: platSessions(platformConvCur, 'Android'), previous: platSessions(yoyPlatformConv, 'Android'), format: 'number' },
-          { label: 'Carts Abandonment',             current: totalAbandoned,                 previous: yoyAbandoned,                   format: 'number'  },
-          { label: 'Carts Abandonment Rate',        current: totalAddToCarts > 0 ? (totalAbandoned / totalAddToCarts) * 100 : 0, previous: yoyAdds > 0 ? (yoyAbandoned / yoyAdds) * 100 : 0, format: 'percent' },
+          { label: 'Carts Abandonment',             current: totalAbandoned,                 previous: yoyAbandoned,                   format: 'number',  lowerIsBetter: true },
+          { label: 'Carts Abandonment Rate',        current: totalAddToCarts > 0 ? (totalAbandoned / totalAddToCarts) * 100 : 0, previous: yoyAdds > 0 ? (yoyAbandoned / yoyAdds) * 100 : 0, format: 'percent', lowerIsBetter: true },
         ],
       }
     }

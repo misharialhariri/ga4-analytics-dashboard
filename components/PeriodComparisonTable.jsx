@@ -7,7 +7,7 @@ function fmtValue(value, format) {
   return Math.round(value).toLocaleString()
 }
 
-function ChangeCell({ current, previous, format }) {
+function ChangeCell({ current, previous, format, lowerIsBetter }) {
   if (previous === 0) return <span className="text-gray-400 text-xs">—</span>
   const diff = current - previous
   const pct = ((diff) / previous) * 100
@@ -15,7 +15,9 @@ function ChangeCell({ current, previous, format }) {
   const diffStr = isPercent
     ? `${diff >= 0 ? '+' : ''}${diff.toFixed(2)}pp`
     : `${diff >= 0 ? '+' : ''}${Math.round(diff).toLocaleString()}`
-  const color = diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-500' : 'text-gray-400'
+  const positive = lowerIsBetter ? diff < 0 : diff > 0
+  const negative = lowerIsBetter ? diff > 0 : diff < 0
+  const color = positive ? 'text-green-600' : negative ? 'text-red-500' : 'text-gray-400'
   return (
     <div className={`text-xs font-medium ${color}`}>
       {diffStr}
@@ -68,7 +70,7 @@ export default function PeriodComparisonTable({ data, title = 'Period Over Perio
                   {fmtValue(row.previous, row.format)}
                 </td>
                 <td className="px-6 py-3 text-right">
-                  <ChangeCell current={row.current} previous={row.previous} format={row.format} />
+                  <ChangeCell current={row.current} previous={row.previous} format={row.format} lowerIsBetter={row.lowerIsBetter} />
                 </td>
               </tr>
             ))}
