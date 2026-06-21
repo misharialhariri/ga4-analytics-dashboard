@@ -169,7 +169,7 @@ function DashboardInner() {
     { title: 'Active Users', value: data.kpis.users.value,              change: data.kpis.users.change,              icon: '👥' },
     { title: 'New Users',    value: data.kpis.newUsers.value,           change: data.kpis.newUsers.change,           icon: '✨' },
     { title: 'Page Views',   value: data.kpis.pageviews.value,          change: data.kpis.pageviews.change,          icon: '👁️' },
-    { title: 'Bounce Rate',  value: data.kpis.bounceRate.value,         change: data.kpis.bounceRate.change,         icon: '↩️', format: 'percentage' },
+    { title: 'Bounce Rate',  value: data.kpis.bounceRate.value,         change: data.kpis.bounceRate.change,         icon: '↩️', format: 'percentage', lowerIsBetter: true },
     { title: 'Avg. Session', value: data.kpis.avgSessionDuration.value, change: data.kpis.avgSessionDuration.change, icon: '⏱️', format: 'duration' },
   ] : []
 

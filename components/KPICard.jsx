@@ -1,9 +1,13 @@
 'use client'
 
-export default function KPICard({ title, value, change, format = 'number', icon }) {
+export default function KPICard({ title, value, change, format = 'number', icon, lowerIsBetter = false }) {
   const isPositive = change > 0
   const isNegative = change < 0
   const absChange = Math.abs(change).toFixed(1)
+
+  // For lower-is-better metrics (e.g. Bounce Rate), invert the green/red logic
+  const showGreen = lowerIsBetter ? isNegative : isPositive
+  const showRed   = lowerIsBetter ? isPositive : isNegative
 
   function formatValue(val) {
     if (format === 'percentage') return `${val.toFixed(1)}%`
@@ -27,18 +31,12 @@ export default function KPICard({ title, value, change, format = 'number', icon 
       <p className="text-3xl font-bold text-gray-900 tabular-nums">{formatValue(value)}</p>
 
       <div className="flex items-center gap-1.5 text-xs">
-        {isPositive && (
-          <span className="inline-flex items-center gap-0.5 font-semibold text-emerald-600">
+        {(isPositive || isNegative) && (
+          <span className={`inline-flex items-center gap-0.5 font-semibold ${showGreen ? 'text-emerald-600' : 'text-red-500'}`}>
             <svg className="w-3 h-3" viewBox="0 0 12 12" fill="currentColor">
-              <path d="M6 2l4 5H2l4-5z" />
-            </svg>
-            {absChange}%
-          </span>
-        )}
-        {isNegative && (
-          <span className="inline-flex items-center gap-0.5 font-semibold text-red-500">
-            <svg className="w-3 h-3" viewBox="0 0 12 12" fill="currentColor">
-              <path d="M6 10L2 5h8l-4 5z" />
+              {isPositive
+                ? <path d="M6 2l4 5H2l4-5z" />
+                : <path d="M6 10L2 5h8l-4 5z" />}
             </svg>
             {absChange}%
           </span>
