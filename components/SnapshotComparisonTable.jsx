@@ -85,10 +85,10 @@ export default function SnapshotComparisonTable({ data, loading }) {
                 return (
                   <>
                     <th key={`${key}-cur`}  className="text-right px-3 py-1.5 text-white/80 font-medium border-l border-white/10 whitespace-nowrap">
-                      {p?.current  || '—'}
+                      {p?.currentLabel  || '—'}
                     </th>
                     <th key={`${key}-prev`} className="text-right px-3 py-1.5 text-white/60 font-medium whitespace-nowrap">
-                      {p?.previous || '—'}
+                      {p?.previousLabel || '—'}
                     </th>
                     <th key={`${key}-chg`}  className="text-right px-3 py-1.5 text-white/60 font-medium">
                       Change

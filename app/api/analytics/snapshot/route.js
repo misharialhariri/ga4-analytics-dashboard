@@ -37,19 +37,19 @@ function makeLabels(start, end, type) {
   const year = new Date(end + 'T00:00:00').getFullYear()
   const prevYear = year - 1
   if (type === 'day') {
-    return { current: fmtDate(end), previous: fmtDate(addYears(end, -1)) }
+    return { currentLabel: fmtDate(end), previousLabel: fmtDate(addYears(end, -1)) }
   }
   if (type === 'week') {
     const wk = isoWeekNum(end)
     return {
-      current:  `W${wk} · ${fmtDateShort(start)}–${fmtDateShort(end)}, ${year}`,
-      previous: `W${wk} · ${fmtDateShort(addYears(start,-1))}–${fmtDateShort(addYears(end,-1))}, ${prevYear}`,
+      currentLabel:  `W${wk} · ${fmtDateShort(start)}–${fmtDateShort(end)}, ${year}`,
+      previousLabel: `W${wk} · ${fmtDateShort(addYears(start,-1))}–${fmtDateShort(addYears(end,-1))}, ${prevYear}`,
     }
   }
   // mtd
   return {
-    current:  `${fmtDateShort(start)}–${fmtDateShort(end)}, ${year}`,
-    previous: `${fmtDateShort(addYears(start,-1))}–${fmtDateShort(addYears(end,-1))}, ${prevYear}`,
+    currentLabel:  `${fmtDateShort(start)}–${fmtDateShort(end)}, ${year}`,
+    previousLabel: `${fmtDateShort(addYears(start,-1))}–${fmtDateShort(addYears(end,-1))}, ${prevYear}`,
   }
 }
 
