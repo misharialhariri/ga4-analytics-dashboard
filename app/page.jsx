@@ -14,6 +14,7 @@ import AbandonedCartsWidget    from '@/components/AbandonedCartsWidget'
 import GenderAgeChart          from '@/components/GenderAgeChart'
 import PeriodComparisonTable   from '@/components/PeriodComparisonTable'
 import PeriodComparisonChart   from '@/components/PeriodComparisonChart'
+import SnapshotComparisonTable from '@/components/SnapshotComparisonTable'
 
 const PRESET_RANGES   = [{ label: '7d', value: 7 }, { label: '30d', value: 30 }, { label: '90d', value: 90 }]
 const AUTO_REFRESH_MS = 30 * 60 * 1000
@@ -112,6 +113,18 @@ function DashboardInner() {
   const [error,       setError]       = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
   const [countdown,   setCountdown]   = useState(AUTO_REFRESH_MS)
+
+  // ── Snapshot YoY (day / week / MTD vs same period last year) ────────────
+  const [snapData,    setSnapData]    = useState(null)
+  const [snapLoading, setSnapLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/analytics/snapshot')
+      .then((r) => r.json())
+      .then(setSnapData)
+      .catch(console.error)
+      .finally(() => setSnapLoading(false))
+  }, [])
 
   // ── Computed label ───────────────────────────────────────────────────────
   const dateRangeLabel = activeDateRange.type === 'custom'
@@ -343,6 +356,10 @@ function DashboardInner() {
             <span><strong>Error:</strong> {error}</span>
           </div>
         )}
+
+        {/* ── Snapshot YoY ───────────────────────────────────────────────── */}
+        <SectionLabel>Snapshot · Year-over-Year</SectionLabel>
+        <SnapshotComparisonTable data={snapData} loading={snapLoading} />
 
         {/* ── Period Comparison ──────────────────────────────────────────── */}
         <SectionLabel>Period Comparison</SectionLabel>
