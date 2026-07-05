@@ -97,7 +97,38 @@ export async function GET(request) {
       runReport({
         startDate: currentStart, endDate: currentEnd,
         dimensions: [{ name: 'date' }],
-        metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
+        metrics: [
+          { name: 'sessions' },            // 0
+          { name: 'activeUsers' },         // 1
+          { name: 'newUsers' },            // 2
+          { name: 'bounceRate' },          // 3
+          { name: 'ecommercePurchases' },  // 4
+          { name: 'addToCarts' },          // 5
+        ],
+        orderBys: [{ dimension: { dimensionName: 'date' } }],
+        limit: timeSeriesLimit,
+      }),
+
+      // ── Daily time series by platform (for Web/iOS/Android breakdown) ──────
+      runReport({
+        startDate: currentStart, endDate: currentEnd,
+        dimensions: [{ name: 'date' }, { name: 'platform' }],
+        metrics: [{ name: 'sessions' }, { name: 'ecommercePurchases' }],
+        orderBys: [{ dimension: { dimensionName: 'date' } }],
+        limit: timeSeriesLimit * 5,
+      }),
+
+      // ── Daily Search Results page views ────────────────────────────────────
+      runReport({
+        startDate: currentStart, endDate: currentEnd,
+        dimensions: [{ name: 'date' }],
+        metrics: [{ name: 'screenPageViews' }],
+        dimensionFilter: {
+          filter: {
+            fieldName: 'unifiedScreenName',
+            stringFilter: { matchType: 'EXACT', value: 'SearchResults' },
+          },
+        },
         orderBys: [{ dimension: { dimensionName: 'date' } }],
         limit: timeSeriesLimit,
       }),
@@ -242,7 +273,8 @@ export async function GET(request) {
     ])
 
     const [
-      kpiCurrent, kpiPrev, timeSeries, topPages, sources,
+      kpiCurrent, kpiPrev, timeSeries, platformTimeSeries, searchTimeSeries,
+      topPages, sources,
       platformData, sessionSourcesRaw, streamData,
       cartsOverall, cartsPerDevice, genderData, ageData,
       platformConvCur, platformConvPrv, productData,
@@ -354,11 +386,56 @@ export async function GET(request) {
     }
 
     // ── Process: time series ───────────────────────────────────────────────
-    const timeSeriesData = (timeSeries.rows ?? []).map((row) => ({
-      date:     row.dimensionValues[0].value,
-      sessions: parseInt(row.metricValues[0].value, 10),
-      users:    parseInt(row.metricValues[1].value, 10),
-    }))
+    // Build platform lookup: { [date]: { webSessions, iosSessions, ... } }
+    const platByDate = {}
+    ;(platformTimeSeries.rows ?? []).forEach((row) => {
+      const date     = row.dimensionValues[0].value
+      const plat     = row.dimensionValues[1].value
+      const sess     = parseInt(row.metricValues[0].value, 10)
+      const purch    = parseInt(row.metricValues[1].value, 10)
+      if (!platByDate[date]) platByDate[date] = { webSessions: 0, iosSessions: 0, androidSessions: 0, webConversions: 0, appConversions: 0 }
+      if (plat === 'web')     { platByDate[date].webSessions     = sess; platByDate[date].webConversions  = purch }
+      if (plat === 'iOS')     { platByDate[date].iosSessions     = sess; platByDate[date].appConversions += purch }
+      if (plat === 'Android') { platByDate[date].androidSessions = sess; platByDate[date].appConversions += purch }
+    })
+
+    // Build search lookup: { [date]: views }
+    const searchByDate = {}
+    ;(searchTimeSeries.rows ?? []).forEach((row) => {
+      searchByDate[row.dimensionValues[0].value] = parseInt(row.metricValues[0].value, 10)
+    })
+
+    const timeSeriesData = (timeSeries.rows ?? []).map((row) => {
+      const date      = row.dimensionValues[0].value
+      const sessions  = parseInt(row.metricValues[0].value, 10)
+      const users     = parseInt(row.metricValues[1].value, 10)
+      const newUsers  = parseInt(row.metricValues[2].value, 10)
+      const bounceRate = parseFloat((parseFloat(row.metricValues[3].value) * 100).toFixed(2))
+      const purchases = parseInt(row.metricValues[4].value, 10)
+      const addToCarts = parseInt(row.metricValues[5].value, 10)
+      const abandoned  = Math.max(0, addToCarts - purchases)
+      const pd = platByDate[date] ?? { webSessions: 0, iosSessions: 0, androidSessions: 0, webConversions: 0, appConversions: 0 }
+      const appSess = pd.iosSessions + pd.androidSessions
+      return {
+        date,
+        sessions,
+        users,
+        newUsers,
+        bounceRate,
+        conversions:     purchases,
+        conversionRate:  sessions > 0 ? parseFloat(((purchases / sessions) * 100).toFixed(2)) : 0,
+        webSessions:     pd.webSessions,
+        iosSessions:     pd.iosSessions,
+        androidSessions: pd.androidSessions,
+        webConversions:  pd.webConversions,
+        appConversions:  pd.appConversions,
+        webConvRate:     pd.webSessions > 0 ? parseFloat(((pd.webConversions / pd.webSessions) * 100).toFixed(2)) : 0,
+        appConvRate:     appSess > 0 ? parseFloat(((pd.appConversions / appSess) * 100).toFixed(2)) : 0,
+        searchResults:   searchByDate[date] ?? 0,
+        abandoned,
+        abandonedRate:   addToCarts > 0 ? parseFloat(((abandoned / addToCarts) * 100).toFixed(2)) : 0,
+      }
+    })
 
     // ── Process: top pages ─────────────────────────────────────────────────
     const topPagesData = (topPages.rows ?? []).map((row) => ({
