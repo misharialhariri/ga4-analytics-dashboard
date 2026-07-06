@@ -270,6 +270,30 @@ export async function GET(request) {
           },
         },
       }),
+
+      // ── Funnel: CartScreen page views ──────────────────────────────────────
+      runReport({
+        startDate: currentStart, endDate: currentEnd,
+        metrics: [{ name: 'screenPageViews' }],
+        dimensionFilter: {
+          filter: {
+            fieldName: 'unifiedScreenName',
+            stringFilter: { matchType: 'EXACT', value: 'CartScreen' },
+          },
+        },
+      }),
+
+      // ── Funnel: CheckoutScreen page views ──────────────────────────────────
+      runReport({
+        startDate: currentStart, endDate: currentEnd,
+        metrics: [{ name: 'screenPageViews' }],
+        dimensionFilter: {
+          filter: {
+            fieldName: 'unifiedScreenName',
+            stringFilter: { matchType: 'EXACT', value: 'CheckoutScreen' },
+          },
+        },
+      }),
     ])
 
     const [
@@ -279,6 +303,7 @@ export async function GET(request) {
       cartsOverall, cartsPerDevice, genderData, ageData,
       platformConvCur, platformConvPrv, productData,
       cartsPrev, searchCur, searchPrev,
+      cartScreenCur, checkoutScreenCur,
     ] = baseResults
 
     // ── Year-over-year queries (only when yoy=1 on a custom range) ─────────
@@ -586,6 +611,29 @@ export async function GET(request) {
       ],
     }
 
+    // ── Process: conversion funnel ─────────────────────────────────────────
+    // Traffic = Users, Add to Cart = CartScreen views, Started Checkout =
+    // CheckoutScreen views, Purchase = total conversions. Each stage reports
+    // completion into the next stage and abandonment out of the funnel.
+    const cartScreenViews     = parseInt(cartScreenCur.rows?.[0]?.metricValues?.[0]?.value ?? '0', 10)
+    const checkoutScreenViews = parseInt(checkoutScreenCur.rows?.[0]?.metricValues?.[0]?.value ?? '0', 10)
+
+    const funnelStagesRaw = [
+      { stage: 'Traffic Count',    value: Math.round(metricVal(cur, 1)) },
+      { stage: 'Add to Cart',      value: cartScreenViews },
+      { stage: 'Started Checkout', value: checkoutScreenViews },
+      { stage: 'Purchase',         value: Math.round(curPurchases) },
+    ]
+    const funnelData = {
+      stages: funnelStagesRaw.map((s, i) => {
+        const next = funnelStagesRaw[i + 1]
+        const completionRate  = next && s.value > 0 ? (next.value / s.value) * 100 : null
+        const abandonments    = next ? Math.max(0, s.value - next.value) : null
+        const abandonmentRate = completionRate !== null ? 100 - completionRate : null
+        return { ...s, completionRate, abandonments, abandonmentRate }
+      }),
+    }
+
     // ── Process: year-over-year comparison ────────────────────────────────
     let yoyComparison = null
     if (yoyStart && yoyKpi) {
@@ -642,6 +690,7 @@ export async function GET(request) {
       conversionRates,
       productPerformance,
       periodComparison,
+      funnelData,
       yoyComparison,
     })
   } catch (err) {

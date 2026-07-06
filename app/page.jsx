@@ -11,6 +11,7 @@ import PlatformChart        from '@/components/PlatformChart'
 import SocialSourceChart    from '@/components/SocialSourceChart'
 import StreamChart          from '@/components/StreamChart'
 import AbandonedCartsWidget    from '@/components/AbandonedCartsWidget'
+import FunnelChart             from '@/components/FunnelChart'
 import GenderAgeChart          from '@/components/GenderAgeChart'
 import PeriodComparisonTable   from '@/components/PeriodComparisonTable'
 import PeriodComparisonChart   from '@/components/PeriodComparisonChart'
@@ -411,6 +412,11 @@ function DashboardInner() {
               )
             })}
           </div>
+        )}
+
+        {/* Conversion funnel */}
+        {loading && !data ? <SkeletonChart height={240} /> : data?.funnelData && (
+          <FunnelChart data={data.funnelData} />
         )}
 
         {/* ── Acquisition ────────────────────────────────────────────────── */}
