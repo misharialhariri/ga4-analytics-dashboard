@@ -271,26 +271,41 @@ export async function GET(request) {
         },
       }),
 
-      // ── Funnel: CartScreen page views ──────────────────────────────────────
+      // ── Funnel: cart page views (all cart screen/page name variants) ───────
       runReport({
         startDate: currentStart, endDate: currentEnd,
         metrics: [{ name: 'screenPageViews' }],
         dimensionFilter: {
           filter: {
             fieldName: 'unifiedScreenName',
-            stringFilter: { matchType: 'EXACT', value: 'CartScreen' },
+            inListFilter: {
+              values: [
+                'CartScreen',
+                'SACO | Shopping Cart',
+                'Cart Page',
+              ],
+              caseSensitive: false,
+            },
           },
         },
       }),
 
-      // ── Funnel: CheckoutScreen page views ──────────────────────────────────
+      // ── Funnel: checkout page views (all checkout screen/page name variants)
       runReport({
         startDate: currentStart, endDate: currentEnd,
         metrics: [{ name: 'screenPageViews' }],
         dimensionFilter: {
           filter: {
             fieldName: 'unifiedScreenName',
-            stringFilter: { matchType: 'EXACT', value: 'CheckoutScreen' },
+            inListFilter: {
+              values: [
+                'CheckoutScreen',
+                'SACO | Checkout - Tools, Home Improvement & Hardware Store',
+                'BuyNowCheckoutScreen',
+                'Checkout Page',
+              ],
+              caseSensitive: false,
+            },
           },
         },
       }),
