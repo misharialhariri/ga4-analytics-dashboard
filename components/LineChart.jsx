@@ -78,8 +78,36 @@ export default function LineChart({ data }) {
     })
   }
 
-  const hasCount   = selected.some((k) => METRIC_MAP[k]?.axis === 'count')
-  const hasPercent = selected.some((k) => METRIC_MAP[k]?.axis === 'percent')
+  const selectedMetrics = METRICS.filter((m) => selected.includes(m.key))
+  const countMetrics    = selectedMetrics.filter((m) => m.axis === 'count')
+  const percentMetrics  = selectedMetrics.filter((m) => m.axis === 'percent')
+
+  // When selected count metrics differ hugely in magnitude (e.g. Cart
+  // Abandonment ~5k vs Total Conversions ~200), the smaller ones flatten into
+  // a line at the bottom. Any count metric peaking below 1/10 of the largest
+  // gets its own secondary axis so both stay readable.
+  const SPLIT_RATIO = 10
+  const maxByKey = {}
+  countMetrics.forEach((m) => {
+    maxByKey[m.key] = Math.max(0, ...(data ?? []).map((d) => d[m.key] ?? 0))
+  })
+  const countGlobalMax = Math.max(0, ...countMetrics.map((m) => maxByKey[m.key]))
+  const smallKeys = new Set(
+    countMetrics.length > 1 && countGlobalMax > 0
+      ? countMetrics
+          .filter((m) => maxByKey[m.key] < countGlobalMax / SPLIT_RATIO)
+          .map((m) => m.key)
+      : []
+  )
+
+  const hasCount   = countMetrics.some((m) => !smallKeys.has(m.key))
+  const hasSmall   = smallKeys.size > 0
+  const hasPercent = percentMetrics.length > 0
+
+  function axisFor(m) {
+    if (m.axis === 'percent') return 'percent'
+    return smallKeys.has(m.key) ? 'countSmall' : 'count'
+  }
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
@@ -116,27 +144,42 @@ export default function LineChart({ data }) {
             tickLine={false}
             interval="preserveStartEnd"
           />
-          <YAxis
-            yAxisId="count"
-            orientation="left"
-            tick={{ fontSize: 11, fill: hasCount ? '#9ca3af' : 'transparent' }}
-            axisLine={false}
-            tickLine={false}
-            width={hasCount ? 42 : 0}
-            tickFormatter={fmtCount}
-          />
-          <YAxis
-            yAxisId="percent"
-            orientation="right"
-            tick={{ fontSize: 11, fill: hasPercent ? '#9ca3af' : 'transparent' }}
-            axisLine={false}
-            tickLine={false}
-            width={hasPercent ? 42 : 0}
-            domain={[0, 100]}
-            tickFormatter={(v) => `${v}%`}
-          />
+          {(hasCount || !hasSmall) && (
+            <YAxis
+              yAxisId="count"
+              orientation="left"
+              tick={{ fontSize: 11, fill: hasCount ? '#9ca3af' : 'transparent' }}
+              axisLine={false}
+              tickLine={false}
+              width={hasCount ? 42 : 0}
+              tickFormatter={fmtCount}
+            />
+          )}
+          {hasSmall && (
+            <YAxis
+              yAxisId="countSmall"
+              orientation={hasPercent ? 'left' : 'right'}
+              tick={{ fontSize: 11, fill: '#6b7280' }}
+              axisLine={false}
+              tickLine={false}
+              width={42}
+              tickFormatter={fmtCount}
+            />
+          )}
+          {hasPercent && (
+            <YAxis
+              yAxisId="percent"
+              orientation="right"
+              tick={{ fontSize: 11, fill: '#9ca3af' }}
+              axisLine={false}
+              tickLine={false}
+              width={46}
+              domain={[0, 'auto']}
+              tickFormatter={(v) => `${parseFloat(Number(v).toFixed(2))}%`}
+            />
+          )}
           <Tooltip content={<CustomTooltip />} />
-          {METRICS.filter((m) => selected.includes(m.key)).map((m) => (
+          {selectedMetrics.map((m) => (
             <Line
               key={m.key}
               type="monotone"
@@ -145,7 +188,7 @@ export default function LineChart({ data }) {
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4, strokeWidth: 0 }}
-              yAxisId={m.axis === 'percent' ? 'percent' : 'count'}
+              yAxisId={axisFor(m)}
             />
           ))}
         </RechartsLine>
