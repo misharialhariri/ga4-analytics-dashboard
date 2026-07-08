@@ -12,6 +12,7 @@ import SocialSourceChart    from '@/components/SocialSourceChart'
 import StreamChart          from '@/components/StreamChart'
 import AbandonedCartsWidget    from '@/components/AbandonedCartsWidget'
 import FunnelChart             from '@/components/FunnelChart'
+import ClarityErrorsWidget     from '@/components/ClarityErrorsWidget'
 import GenderAgeChart          from '@/components/GenderAgeChart'
 import PeriodComparisonTable   from '@/components/PeriodComparisonTable'
 import PeriodComparisonChart   from '@/components/PeriodComparisonChart'
@@ -110,6 +111,8 @@ function DashboardInner() {
   // ── Data state ───────────────────────────────────────────────────────────
   const [data,        setData]        = useState(null)
   const [loading,     setLoading]     = useState(true)
+  const [clarity,        setClarity]        = useState(null)
+  const [clarityLoading, setClarityLoading] = useState(true)
   const [error,       setError]       = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
   const [countdown,   setCountdown]   = useState(AUTO_REFRESH_MS)
@@ -145,6 +148,16 @@ function DashboardInner() {
   }, [activeDateRange, showYoy])
 
   useEffect(() => { fetchData() },                             [fetchData])
+
+  // Clarity data is a fixed 3-day window and heavily rate-limited upstream —
+  // fetch once on mount, independent of the date-range selector.
+  useEffect(() => {
+    fetch('/api/clarity')
+      .then((r) => r.json())
+      .then(setClarity)
+      .catch(() => setClarity({ error: 'Failed to load Clarity data.' }))
+      .finally(() => setClarityLoading(false))
+  }, [])
   useEffect(() => { const t = setInterval(fetchData, AUTO_REFRESH_MS); return () => clearInterval(t) }, [fetchData])
   useEffect(() => { const t = setInterval(() => setCountdown((c) => Math.max(0, c - 1000)), 1000); return () => clearInterval(t) }, [lastUpdated])
 
@@ -448,6 +461,10 @@ function DashboardInner() {
         {/* ── Ecommerce ──────────────────────────────────────────────────── */}
         <SectionLabel>Ecommerce</SectionLabel>
         {loading && !data ? <SkeletonChart height={240} /> : data && <AbandonedCartsWidget data={data.abandonedCartsData} />}
+
+        {/* ── Site Health (Microsoft Clarity) ────────────────────────────── */}
+        <SectionLabel>Site Health</SectionLabel>
+        {clarityLoading ? <SkeletonChart height={160} /> : <ClarityErrorsWidget data={clarity} />}
 
         {/* ── Demographics ───────────────────────────────────────────────── */}
         <SectionLabel>Demographics</SectionLabel>
