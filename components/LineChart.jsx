@@ -32,10 +32,21 @@ const METRICS = [
 
 const METRIC_MAP = Object.fromEntries(METRICS.map((m) => [m.key, m]))
 
+function parseGa4Date(raw) {
+  if (!raw || raw.length !== 8) return null
+  return new Date(`${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`)
+}
+
 function formatDate(raw) {
-  if (!raw || raw.length !== 8) return raw
-  const d = new Date(`${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`)
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const d = parseGa4Date(raw)
+  if (!d) return raw
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
+function formatDateLong(raw) {
+  const d = parseGa4Date(raw)
+  if (!d) return raw
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 function fmtCount(v) {
@@ -48,7 +59,7 @@ function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-3 text-xs min-w-[160px]">
-      <p className="font-semibold text-gray-700 mb-2">{formatDate(label)}</p>
+      <p className="font-semibold text-gray-700 mb-2">{formatDateLong(label)}</p>
       {payload.map((entry) => {
         const m = METRIC_MAP[entry.dataKey]
         const val = m?.axis === 'percent'
@@ -186,7 +197,7 @@ export default function LineChart({ data }) {
               dataKey={m.key}
               stroke={m.color}
               strokeWidth={2}
-              dot={false}
+              dot={(data?.length ?? 0) <= 2 ? { r: 4, strokeWidth: 0, fill: m.color } : false}
               activeDot={{ r: 4, strokeWidth: 0 }}
               yAxisId={axisFor(m)}
             />

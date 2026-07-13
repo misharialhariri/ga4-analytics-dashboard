@@ -17,7 +17,7 @@ import GenderAgeChart          from '@/components/GenderAgeChart'
 import PeriodComparisonTable   from '@/components/PeriodComparisonTable'
 import PeriodComparisonChart   from '@/components/PeriodComparisonChart'
 
-const PRESET_RANGES   = [{ label: '7d', value: 7 }, { label: '30d', value: 30 }, { label: '90d', value: 90 }]
+const PRESET_RANGES   = [{ label: 'Yesterday', value: 1 }, { label: '7d', value: 7 }, { label: '30d', value: 30 }, { label: '90d', value: 90 }]
 const AUTO_REFRESH_MS = 30 * 60 * 1000
 const SACO_NAVY       = '#1B2965'
 const SACO_NAVY_DARK  = '#152050'
@@ -120,7 +120,7 @@ function DashboardInner() {
   // ── Computed label ───────────────────────────────────────────────────────
   const dateRangeLabel = activeDateRange.type === 'custom'
     ? `${fmtDate(activeDateRange.start)} – ${fmtDate(activeDateRange.end)}`
-    : `Last ${activeDateRange.days} days`
+    : activeDateRange.days === 1 ? 'Yesterday' : `Last ${activeDateRange.days} days`
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
