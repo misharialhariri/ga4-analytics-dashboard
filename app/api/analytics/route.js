@@ -610,7 +610,6 @@ export async function GET(request) {
         { label: 'Users',                         current: Math.round(metricVal(cur, 1)),  previous: Math.round(metricVal(prv, 1)),  format: 'number'  },
         { label: 'Sessions',                      current: Math.round(metricVal(cur, 0)),  previous: Math.round(metricVal(prv, 0)),  format: 'number'  },
         { label: 'New Users',                     current: Math.round(metricVal(cur, 5)),  previous: Math.round(metricVal(prv, 5)),  format: 'number'  },
-        { label: 'Search Results',                current: curSearchCount,                 previous: prevSearchCount,                format: 'number'  },
         { label: 'Conversion (Website)',          current: webCur.purchases,               previous: webPrv.purchases,               format: 'number'  },
         { label: 'Conversion Rate (Website)',     current: webCur.rate,                    previous: webPrv.rate,                    format: 'percent' },
         { label: 'Total Conversions',             current: Math.round(curPurchases),       previous: Math.round(prvPurchases),       format: 'number'  },
