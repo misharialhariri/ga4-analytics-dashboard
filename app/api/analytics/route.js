@@ -118,15 +118,15 @@ export async function GET(request) {
         limit: timeSeriesLimit * 5,
       }),
 
-      // ── Daily Search Results page views ────────────────────────────────────
+      // ── Daily Search Results (view_search_results event) ───────────────────
       runReport({
         startDate: currentStart, endDate: currentEnd,
         dimensions: [{ name: 'date' }],
-        metrics: [{ name: 'screenPageViews' }],
+        metrics: [{ name: 'eventCount' }],
         dimensionFilter: {
           filter: {
-            fieldName: 'unifiedScreenName',
-            stringFilter: { matchType: 'EXACT', value: 'SearchResults' },
+            fieldName: 'eventName',
+            stringFilter: { matchType: 'EXACT', value: 'view_search_results' },
           },
         },
         orderBys: [{ dimension: { dimensionName: 'date' } }],
@@ -247,26 +247,26 @@ export async function GET(request) {
         ],
       }),
 
-      // ── Search results page views: current period ─────────────────────────
+      // ── Search results (view_search_results event): current period ─────────
       runReport({
         startDate: currentStart, endDate: currentEnd,
-        metrics: [{ name: 'screenPageViews' }],
+        metrics: [{ name: 'eventCount' }],
         dimensionFilter: {
           filter: {
-            fieldName: 'unifiedScreenName',
-            stringFilter: { matchType: 'EXACT', value: 'SearchResults' },
+            fieldName: 'eventName',
+            stringFilter: { matchType: 'EXACT', value: 'view_search_results' },
           },
         },
       }),
 
-      // ── Search results page views: previous period ────────────────────────
+      // ── Search results (view_search_results event): previous period ────────
       runReport({
         startDate: prevStart, endDate: prevEnd,
-        metrics: [{ name: 'screenPageViews' }],
+        metrics: [{ name: 'eventCount' }],
         dimensionFilter: {
           filter: {
-            fieldName: 'unifiedScreenName',
-            stringFilter: { matchType: 'EXACT', value: 'SearchResults' },
+            fieldName: 'eventName',
+            stringFilter: { matchType: 'EXACT', value: 'view_search_results' },
           },
         },
       }),
@@ -345,11 +345,11 @@ export async function GET(request) {
           }),
           runReport({
             startDate: yoyStart, endDate: yoyEnd,
-            metrics: [{ name: 'screenPageViews' }],
+            metrics: [{ name: 'eventCount' }],
             dimensionFilter: {
               filter: {
-                fieldName: 'unifiedScreenName',
-                stringFilter: { matchType: 'EXACT', value: 'SearchResults' },
+                fieldName: 'eventName',
+                stringFilter: { matchType: 'EXACT', value: 'view_search_results' },
               },
             },
           }),
