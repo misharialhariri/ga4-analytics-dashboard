@@ -24,7 +24,7 @@ export default function FunnelChart({ data }) {
       {/* Column headers */}
       <div className="hidden sm:grid grid-cols-[130px_1fr_90px_110px_90px] gap-3 mb-2 px-1">
         <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Stage</span>
-        <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Active Users</span>
+        <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Events</span>
         <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide text-right">Completion</span>
         <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide text-right">Abandonments</span>
         <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide text-right">Abandon. Rate</span>

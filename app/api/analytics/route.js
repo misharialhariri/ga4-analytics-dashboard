@@ -271,41 +271,50 @@ export async function GET(request) {
         },
       }),
 
-      // ── Funnel: cart page views (all cart screen/page name variants) ───────
+      // ── Funnel: Product View (view_item event) ──────────────────────────────
       runReport({
         startDate: currentStart, endDate: currentEnd,
-        metrics: [{ name: 'screenPageViews' }],
+        metrics: [{ name: 'eventCount' }],
         dimensionFilter: {
           filter: {
-            fieldName: 'unifiedScreenName',
-            inListFilter: {
-              values: [
-                'CartScreen',
-                'SACO | Shopping Cart',
-                'Cart Page',
-              ],
-              caseSensitive: false,
-            },
+            fieldName: 'eventName',
+            stringFilter: { matchType: 'EXACT', value: 'view_item' },
           },
         },
       }),
 
-      // ── Funnel: checkout page views (all checkout screen/page name variants)
+      // ── Funnel: Add to Cart ("add to cart" / add_to_cart event variants) ───
       runReport({
         startDate: currentStart, endDate: currentEnd,
-        metrics: [{ name: 'screenPageViews' }],
+        metrics: [{ name: 'eventCount' }],
         dimensionFilter: {
           filter: {
-            fieldName: 'unifiedScreenName',
-            inListFilter: {
-              values: [
-                'CheckoutScreen',
-                'SACO | Checkout - Tools, Home Improvement & Hardware Store',
-                'BuyNowCheckoutScreen',
-                'Checkout Page',
-              ],
-              caseSensitive: false,
-            },
+            fieldName: 'eventName',
+            inListFilter: { values: ['add to cart', 'add_to_cart'], caseSensitive: false },
+          },
+        },
+      }),
+
+      // ── Funnel: Begin Checkout (begin_checkout event) ───────────────────────
+      runReport({
+        startDate: currentStart, endDate: currentEnd,
+        metrics: [{ name: 'eventCount' }],
+        dimensionFilter: {
+          filter: {
+            fieldName: 'eventName',
+            stringFilter: { matchType: 'EXACT', value: 'begin_checkout' },
+          },
+        },
+      }),
+
+      // ── Funnel: Purchase (purchase event) ───────────────────────────────────
+      runReport({
+        startDate: currentStart, endDate: currentEnd,
+        metrics: [{ name: 'eventCount' }],
+        dimensionFilter: {
+          filter: {
+            fieldName: 'eventName',
+            stringFilter: { matchType: 'EXACT', value: 'purchase' },
           },
         },
       }),
@@ -318,7 +327,7 @@ export async function GET(request) {
       cartsOverall, cartsPerDevice, genderData, ageData,
       platformConvCur, platformConvPrv, productData,
       cartsPrev, searchCur, searchPrev,
-      cartScreenCur, checkoutScreenCur,
+      funnelViewItemCur, funnelAddToCartCur, funnelBeginCheckoutCur, funnelPurchaseCur,
     ] = baseResults
 
     // ── Year-over-year queries (only when yoy=1 on a custom range) ─────────
@@ -627,17 +636,20 @@ export async function GET(request) {
     }
 
     // ── Process: conversion funnel ─────────────────────────────────────────
-    // Traffic = Users, Add to Cart = CartScreen views, Started Checkout =
-    // CheckoutScreen views, Purchase = total conversions. Each stage reports
-    // completion into the next stage and abandonment out of the funnel.
-    const cartScreenViews     = parseInt(cartScreenCur.rows?.[0]?.metricValues?.[0]?.value ?? '0', 10)
-    const checkoutScreenViews = parseInt(checkoutScreenCur.rows?.[0]?.metricValues?.[0]?.value ?? '0', 10)
+    // Mirrors the GA4 Explore funnel: Product View (view_item) → Add to Cart
+    // ("add to cart" / add_to_cart) → Begin Checkout (begin_checkout) →
+    // Purchase (purchase). Each stage reports completion into the next stage
+    // and abandonment out of the funnel.
+    const funnelViewItemCount      = parseInt(funnelViewItemCur.rows?.[0]?.metricValues?.[0]?.value ?? '0', 10)
+    const funnelAddToCartCount     = parseInt(funnelAddToCartCur.rows?.[0]?.metricValues?.[0]?.value ?? '0', 10)
+    const funnelBeginCheckoutCount = parseInt(funnelBeginCheckoutCur.rows?.[0]?.metricValues?.[0]?.value ?? '0', 10)
+    const funnelPurchaseCount      = parseInt(funnelPurchaseCur.rows?.[0]?.metricValues?.[0]?.value ?? '0', 10)
 
     const funnelStagesRaw = [
-      { stage: 'Traffic Count',    value: Math.round(metricVal(cur, 1)) },
-      { stage: 'Add to Cart',      value: cartScreenViews },
-      { stage: 'Started Checkout', value: checkoutScreenViews },
-      { stage: 'Purchase',         value: Math.round(curPurchases) },
+      { stage: 'Product View',    value: funnelViewItemCount },
+      { stage: 'Add to Cart',     value: funnelAddToCartCount },
+      { stage: 'Begin Checkout',  value: funnelBeginCheckoutCount },
+      { stage: 'Purchase',        value: funnelPurchaseCount },
     ]
     const funnelData = {
       stages: funnelStagesRaw.map((s, i) => {
