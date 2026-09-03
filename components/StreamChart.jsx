@@ -1,26 +1,41 @@
 'use client'
 
+import { useState } from 'react'
 import {
   BarChart as RechartsBar,
   Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer,
 } from 'recharts'
+import ViewToggle from './ViewToggle'
+import DataTable  from './DataTable'
 
 function truncate(str, n = 30) {
   return str.length > n ? str.slice(0, n - 1) + '…' : str
 }
 
+const COLUMNS = [
+  { key: 'stream',   label: 'Stream' },
+  { key: 'sessions', label: 'Sessions', align: 'right', render: (r) => r.sessions.toLocaleString() },
+  { key: 'users',    label: 'Users',    align: 'right', render: (r) => r.users.toLocaleString() },
+]
+
 export default function StreamChart({ data }) {
+  const [view, setView] = useState('chart')
   const formatted = data.map((d) => ({ ...d, label: truncate(d.stream) }))
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <h3 className="text-sm font-semibold text-gray-700 mb-5">Traffic by Stream</h3>
+      <div className="flex items-center justify-between mb-5 gap-2">
+        <h3 className="text-sm font-semibold text-gray-700">Traffic by Stream</h3>
+        <ViewToggle view={view} onChange={setView} />
+      </div>
 
       {formatted.length === 0 ? (
         <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
           No stream data available for this period
         </div>
+      ) : view === 'table' ? (
+        <DataTable columns={COLUMNS} rows={data} height={280} />
       ) : (
         <ResponsiveContainer width="100%" height={280}>
           <RechartsBar

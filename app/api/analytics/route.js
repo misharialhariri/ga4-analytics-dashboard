@@ -142,13 +142,14 @@ export async function GET(request) {
         limit: 10,
       }),
 
-      // ── Channel group traffic sources ──────────────────────────────────────
+      // ── Channel group traffic sources, by platform (for Website/Mobile/
+      // Combined toggle) ──────────────────────────────────────────────────────
       runReport({
         startDate: currentStart, endDate: currentEnd,
-        dimensions: [{ name: 'sessionDefaultChannelGroup' }],
+        dimensions: [{ name: 'sessionDefaultChannelGroup' }, { name: 'platform' }],
         metrics: [{ name: 'sessions' }],
         orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
-        limit: 8,
+        limit: 80,
       }),
 
       // ── Platform (iOS / Android / Web) ─────────────────────────────────────
@@ -493,11 +494,20 @@ export async function GET(request) {
       sessions:  parseInt(row.metricValues[1].value, 10),
     }))
 
-    // ── Process: channel traffic sources ──────────────────────────────────
-    const trafficSourcesData = (sources.rows ?? []).map((row) => ({
-      source:   row.dimensionValues[0].value || 'Direct',
-      sessions: parseInt(row.metricValues[0].value, 10),
-    }))
+    // ── Process: channel traffic sources, split by website vs mobile app ───
+    const sourcePlatformMap = {}
+    ;(sources.rows ?? []).forEach((row) => {
+      const source   = row.dimensionValues[0].value || 'Direct'
+      const platform = row.dimensionValues[1].value
+      const sessions = parseInt(row.metricValues[0].value, 10)
+      if (!sourcePlatformMap[source]) sourcePlatformMap[source] = { website: 0, mobile: 0 }
+      if (platform === 'web') sourcePlatformMap[source].website += sessions
+      else                    sourcePlatformMap[source].mobile  += sessions
+    })
+    const trafficSourcesData = Object.entries(sourcePlatformMap)
+      .map(([source, v]) => ({ source, website: v.website, mobile: v.mobile, combined: v.website + v.mobile }))
+      .sort((a, b) => b.combined - a.combined)
+      .slice(0, 8)
 
     // ── Process: platform (iOS / Android / Web) ────────────────────────────
     const platformBreakdown = (platformData.rows ?? [])

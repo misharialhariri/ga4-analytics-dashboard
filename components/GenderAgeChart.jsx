@@ -1,9 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
+import ViewToggle from './ViewToggle'
+import DataTable  from './DataTable'
 
 const GENDER_COLORS = {
   male:    '#1B2965',
@@ -29,13 +32,27 @@ function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s
 }
 
+const GENDER_COLUMNS = [
+  { key: 'gender', label: 'Gender', render: (r) => capitalize(r.gender) },
+  { key: 'users',  label: 'Users',  align: 'right', render: (r) => r.users.toLocaleString() },
+]
+
+const AGE_COLUMNS = [
+  { key: 'age',   label: 'Age Group' },
+  { key: 'users', label: 'Users', align: 'right', render: (r) => r.users.toLocaleString() },
+]
+
 export default function GenderAgeChart({ genderData, ageData }) {
+  const [view, setView] = useState('chart')
   const hasGender = genderData.length > 0
   const hasAge    = ageData.length > 0
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <h3 className="text-sm font-semibold text-gray-700 mb-5">Demographics</h3>
+      <div className="flex items-center justify-between mb-5 gap-2">
+        <h3 className="text-sm font-semibold text-gray-700">Demographics</h3>
+        <ViewToggle view={view} onChange={setView} />
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
@@ -46,6 +63,8 @@ export default function GenderAgeChart({ genderData, ageData }) {
           </p>
           {!hasGender ? (
             <NoData message="No gender data available" />
+          ) : view === 'table' ? (
+            <DataTable columns={GENDER_COLUMNS} rows={genderData} height={180} />
           ) : (
             <ResponsiveContainer width="100%" height={180}>
               <BarChart
@@ -85,6 +104,8 @@ export default function GenderAgeChart({ genderData, ageData }) {
           </p>
           {!hasAge ? (
             <NoData message="No age data available" />
+          ) : view === 'table' ? (
+            <DataTable columns={AGE_COLUMNS} rows={ageData} height={180} />
           ) : (
             <ResponsiveContainer width="100%" height={180}>
               <BarChart
