@@ -6,8 +6,9 @@ import {
   Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
-import ViewToggle from './ViewToggle'
-import DataTable  from './DataTable'
+import ViewToggle   from './ViewToggle'
+import MetricToggle from './MetricToggle'
+import DataTable    from './DataTable'
 
 const SOURCE_COLORS = {
   'Google':    '#4285F4',
@@ -25,23 +26,28 @@ function getColor(source) {
   return SOURCE_COLORS[source] || '#94a3b8'
 }
 
-const COLUMNS = [
-  { key: 'source',   label: 'Source' },
-  { key: 'sessions', label: 'Sessions', align: 'right', render: (r) => r.sessions.toLocaleString() },
-]
-
 export default function SocialSourceChart({ data }) {
-  const [view, setView] = useState('chart')
+  const [view, setView]     = useState('chart')
+  const [metric, setMetric] = useState('sessions')
+  const metricLabel = metric === 'sessions' ? 'Sessions' : 'Active Users'
+
+  const columns = [
+    { key: 'source', label: 'Source' },
+    { key: metric,   label: metricLabel, align: 'right', render: (r) => r[metric].toLocaleString() },
+  ]
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between mb-5 gap-2">
-        <h3 className="text-sm font-semibold text-gray-700">Sessions by Source</h3>
-        <ViewToggle view={view} onChange={setView} />
+      <div className="flex items-center justify-between mb-5 gap-2 flex-wrap">
+        <h3 className="text-sm font-semibold text-gray-700">{metricLabel} by Source</h3>
+        <div className="flex items-center gap-2">
+          <MetricToggle metric={metric} onChange={setMetric} />
+          <ViewToggle view={view} onChange={setView} />
+        </div>
       </div>
 
       {view === 'table' ? (
-        <DataTable columns={COLUMNS} rows={data} height={280} />
+        <DataTable columns={columns} rows={data} height={280} />
       ) : (
         <ResponsiveContainer width="100%" height={280}>
           <RechartsBar
@@ -63,10 +69,10 @@ export default function SocialSourceChart({ data }) {
               width={90}
             />
             <Tooltip
-              formatter={(v) => [v.toLocaleString(), 'Sessions']}
+              formatter={(v) => [v.toLocaleString(), metricLabel]}
               contentStyle={{ borderRadius: '10px', border: '1px solid #e5e7eb', fontSize: 12 }}
             />
-            <Bar dataKey="sessions" radius={[0, 6, 6, 0]} maxBarSize={20}>
+            <Bar dataKey={metric} radius={[0, 6, 6, 0]} maxBarSize={20}>
               {data.map((d, i) => (
                 <Cell key={i} fill={getColor(d.source)} />
               ))}

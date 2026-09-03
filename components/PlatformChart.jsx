@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import ViewToggle from './ViewToggle'
-import DataTable  from './DataTable'
+import ViewToggle   from './ViewToggle'
+import MetricToggle from './MetricToggle'
+import DataTable    from './DataTable'
 
 const PLATFORM_CONFIG = {
   iOS:     { color: '#1c1c1e', icon: '🍎' },
@@ -31,24 +32,27 @@ function renderLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
 }
 
 export default function PlatformChart({ data }) {
-  const [view, setView] = useState('chart')
-  const total = data.reduce((s, d) => s + d.sessions, 0)
+  const [view, setView]     = useState('chart')
+  const [metric, setMetric] = useState('sessions')
+  const metricLabel = metric === 'sessions' ? 'Sessions' : 'Active Users'
+  const total = data.reduce((s, d) => s + d[metric], 0)
 
   const columns = [
     { key: 'platform', label: 'Platform' },
-    { key: 'sessions', label: 'Sessions', align: 'right', render: (r) => r.sessions.toLocaleString() },
+    { key: metric,      label: metricLabel, align: 'right', render: (r) => r[metric].toLocaleString() },
     {
       key: 'share', label: '% of Total', align: 'right',
-      render: (r) => `${total > 0 ? ((r.sessions / total) * 100).toFixed(1) : 0}%`,
+      render: (r) => `${total > 0 ? ((r[metric] / total) * 100).toFixed(1) : 0}%`,
     },
   ]
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between mb-4 gap-2">
+      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <h3 className="text-sm font-semibold text-gray-700">Traffic by Platform</h3>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-400 whitespace-nowrap">{total.toLocaleString()} sessions</span>
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <span className="text-xs text-gray-400 whitespace-nowrap">{total.toLocaleString()} {metricLabel.toLowerCase()}</span>
+          <MetricToggle metric={metric} onChange={setMetric} />
           <ViewToggle view={view} onChange={setView} />
         </div>
       </div>
@@ -63,7 +67,7 @@ export default function PlatformChart({ data }) {
               <span className="text-base leading-none">{cfg.icon}</span>
               <span className="text-xs font-semibold text-gray-700">{d.platform}</span>
               <span className="text-xs text-gray-400">
-                {total > 0 ? ((d.sessions / total) * 100).toFixed(1) : 0}%
+                {total > 0 ? ((d[metric] / total) * 100).toFixed(1) : 0}%
               </span>
             </div>
           )
@@ -79,7 +83,7 @@ export default function PlatformChart({ data }) {
               data={data}
               cx="50%" cy="50%"
               innerRadius={55} outerRadius={90}
-              dataKey="sessions" nameKey="platform"
+              dataKey={metric} nameKey="platform"
               labelLine={false} label={renderLabel}
             >
               {data.map((d) => (
@@ -87,7 +91,7 @@ export default function PlatformChart({ data }) {
               ))}
             </Pie>
             <Tooltip
-              formatter={(v) => [v.toLocaleString(), 'Sessions']}
+              formatter={(v) => [v.toLocaleString(), metricLabel]}
               contentStyle={{ borderRadius: '10px', border: '1px solid #e5e7eb', fontSize: 12 }}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" iconSize={8} />

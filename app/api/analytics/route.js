@@ -143,11 +143,11 @@ export async function GET(request) {
       }),
 
       // ── Channel group traffic sources, by platform (for Website/Mobile/
-      // Combined toggle) ──────────────────────────────────────────────────────
+      // Combined toggle, and Sessions/Active Users toggle) ───────────────────
       runReport({
         startDate: currentStart, endDate: currentEnd,
         dimensions: [{ name: 'sessionDefaultChannelGroup' }, { name: 'platform' }],
-        metrics: [{ name: 'sessions' }],
+        metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
         orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
         limit: 80,
       }),
@@ -156,7 +156,7 @@ export async function GET(request) {
       runReport({
         startDate: currentStart, endDate: currentEnd,
         dimensions: [{ name: 'platform' }],
-        metrics: [{ name: 'sessions' }],
+        metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
         orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
       }),
 
@@ -164,7 +164,7 @@ export async function GET(request) {
       runReport({
         startDate: currentStart, endDate: currentEnd,
         dimensions: [{ name: 'sessionSource' }],
-        metrics: [{ name: 'sessions' }],
+        metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
         orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
         limit: 25,
       }),
@@ -196,19 +196,19 @@ export async function GET(request) {
         orderBys: [{ metric: { metricName: 'addToCarts' }, desc: true }],
       }),
 
-      // ── Active users by gender ─────────────────────────────────────────────
+      // ── Active users / sessions by gender ───────────────────────────────────
       runReport({
         startDate: currentStart, endDate: currentEnd,
         dimensions: [{ name: 'userGender' }],
-        metrics: [{ name: 'activeUsers' }],
+        metrics: [{ name: 'activeUsers' }, { name: 'sessions' }],
         orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
       }),
 
-      // ── Active users by age bracket ────────────────────────────────────────
+      // ── Active users / sessions by age bracket ──────────────────────────────
       runReport({
         startDate: currentStart, endDate: currentEnd,
         dimensions: [{ name: 'userAgeBracket' }],
-        metrics: [{ name: 'activeUsers' }],
+        metrics: [{ name: 'activeUsers' }, { name: 'sessions' }],
         orderBys: [{ dimension: { dimensionName: 'userAgeBracket' } }],
       }),
 
@@ -500,12 +500,26 @@ export async function GET(request) {
       const source   = row.dimensionValues[0].value || 'Direct'
       const platform = row.dimensionValues[1].value
       const sessions = parseInt(row.metricValues[0].value, 10)
-      if (!sourcePlatformMap[source]) sourcePlatformMap[source] = { website: 0, mobile: 0 }
-      if (platform === 'web') sourcePlatformMap[source].website += sessions
-      else                    sourcePlatformMap[source].mobile  += sessions
+      const users    = parseInt(row.metricValues[1].value, 10)
+      if (!sourcePlatformMap[source]) sourcePlatformMap[source] = { website: 0, mobile: 0, websiteUsers: 0, mobileUsers: 0 }
+      if (platform === 'web') {
+        sourcePlatformMap[source].website      += sessions
+        sourcePlatformMap[source].websiteUsers += users
+      } else {
+        sourcePlatformMap[source].mobile      += sessions
+        sourcePlatformMap[source].mobileUsers += users
+      }
     })
     const trafficSourcesData = Object.entries(sourcePlatformMap)
-      .map(([source, v]) => ({ source, website: v.website, mobile: v.mobile, combined: v.website + v.mobile }))
+      .map(([source, v]) => ({
+        source,
+        website:      v.website,
+        mobile:       v.mobile,
+        combined:     v.website + v.mobile,
+        websiteUsers: v.websiteUsers,
+        mobileUsers:  v.mobileUsers,
+        combinedUsers: v.websiteUsers + v.mobileUsers,
+      }))
       .sort((a, b) => b.combined - a.combined)
       .slice(0, 8)
 
@@ -516,6 +530,7 @@ export async function GET(request) {
         return {
           platform: raw === 'web' ? 'Web' : raw === '(not set)' ? 'Other' : raw,
           sessions: parseInt(row.metricValues[0].value, 10),
+          users:    parseInt(row.metricValues[1].value, 10),
         }
       })
       .filter((d) => d.sessions > 0)
@@ -525,10 +540,13 @@ export async function GET(request) {
     ;(sessionSourcesRaw.rows ?? []).forEach((row) => {
       const name     = normalizeSource(row.dimensionValues[0].value)
       const sessions = parseInt(row.metricValues[0].value, 10)
-      sourceMap[name] = (sourceMap[name] || 0) + sessions
+      const users    = parseInt(row.metricValues[1].value, 10)
+      if (!sourceMap[name]) sourceMap[name] = { sessions: 0, users: 0 }
+      sourceMap[name].sessions += sessions
+      sourceMap[name].users    += users
     })
     const sessionSourcesData = Object.entries(sourceMap)
-      .map(([source, sessions]) => ({ source, sessions }))
+      .map(([source, v]) => ({ source, sessions: v.sessions, users: v.users }))
       .sort((a, b) => b.sessions - a.sessions)
       .slice(0, 10)
 
@@ -571,16 +589,18 @@ export async function GET(request) {
     const genderBreakdown = (genderData.rows ?? [])
       .filter((row) => !DEMO_EXCLUDE.has(row.dimensionValues[0].value))
       .map((row) => ({
-        gender: row.dimensionValues[0].value,
-        users:  parseInt(row.metricValues[0].value, 10),
+        gender:   row.dimensionValues[0].value,
+        users:    parseInt(row.metricValues[0].value, 10),
+        sessions: parseInt(row.metricValues[1].value, 10),
       }))
 
     // ── Process: age brackets ──────────────────────────────────────────────
     const ageBreakdown = (ageData.rows ?? [])
       .filter((row) => !DEMO_EXCLUDE.has(row.dimensionValues[0].value))
       .map((row) => ({
-        age:   row.dimensionValues[0].value,
-        users: parseInt(row.metricValues[0].value, 10),
+        age:      row.dimensionValues[0].value,
+        users:    parseInt(row.metricValues[0].value, 10),
+        sessions: parseInt(row.metricValues[1].value, 10),
       }))
 
     // ── Process: product performance ──────────────────────────────────────

@@ -5,8 +5,9 @@ import {
   BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
-import ViewToggle from './ViewToggle'
-import DataTable  from './DataTable'
+import ViewToggle   from './ViewToggle'
+import MetricToggle from './MetricToggle'
+import DataTable    from './DataTable'
 
 const GENDER_COLORS = {
   male:    '#1B2965',
@@ -32,26 +33,31 @@ function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s
 }
 
-const GENDER_COLUMNS = [
-  { key: 'gender', label: 'Gender', render: (r) => capitalize(r.gender) },
-  { key: 'users',  label: 'Users',  align: 'right', render: (r) => r.users.toLocaleString() },
-]
-
-const AGE_COLUMNS = [
-  { key: 'age',   label: 'Age Group' },
-  { key: 'users', label: 'Users', align: 'right', render: (r) => r.users.toLocaleString() },
-]
-
 export default function GenderAgeChart({ genderData, ageData }) {
-  const [view, setView] = useState('chart')
+  const [view, setView]     = useState('chart')
+  const [metric, setMetric] = useState('users')
+  const metricLabel = metric === 'sessions' ? 'Sessions' : 'Active Users'
   const hasGender = genderData.length > 0
   const hasAge    = ageData.length > 0
 
+  const genderColumns = [
+    { key: 'gender', label: 'Gender', render: (r) => capitalize(r.gender) },
+    { key: metric,   label: metricLabel, align: 'right', render: (r) => r[metric].toLocaleString() },
+  ]
+
+  const ageColumns = [
+    { key: 'age',  label: 'Age Group' },
+    { key: metric, label: metricLabel, align: 'right', render: (r) => r[metric].toLocaleString() },
+  ]
+
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between mb-5 gap-2">
+      <div className="flex items-center justify-between mb-5 gap-2 flex-wrap">
         <h3 className="text-sm font-semibold text-gray-700">Demographics</h3>
-        <ViewToggle view={view} onChange={setView} />
+        <div className="flex items-center gap-2">
+          <MetricToggle metric={metric} onChange={setMetric} />
+          <ViewToggle view={view} onChange={setView} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -59,12 +65,12 @@ export default function GenderAgeChart({ genderData, ageData }) {
         {/* ── Gender ─────────────────────────────────────────────────────── */}
         <div>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-            Active Users by Gender
+            {metricLabel} by Gender
           </p>
           {!hasGender ? (
             <NoData message="No gender data available" />
           ) : view === 'table' ? (
-            <DataTable columns={GENDER_COLUMNS} rows={genderData} height={180} />
+            <DataTable columns={genderColumns} rows={genderData} height={180} />
           ) : (
             <ResponsiveContainer width="100%" height={180}>
               <BarChart
@@ -84,10 +90,10 @@ export default function GenderAgeChart({ genderData, ageData }) {
                   tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}
                 />
                 <Tooltip
-                  formatter={(v) => [v.toLocaleString(), 'Users']}
+                  formatter={(v) => [v.toLocaleString(), metricLabel]}
                   contentStyle={{ borderRadius: '10px', border: '1px solid #e5e7eb', fontSize: 12 }}
                 />
-                <Bar dataKey="users" radius={[6, 6, 0, 0]} maxBarSize={56}>
+                <Bar dataKey={metric} radius={[6, 6, 0, 0]} maxBarSize={56}>
                   {genderData.map((d, i) => (
                     <Cell key={i} fill={GENDER_COLORS[d.gender] || '#94a3b8'} />
                   ))}
@@ -100,12 +106,12 @@ export default function GenderAgeChart({ genderData, ageData }) {
         {/* ── Age ────────────────────────────────────────────────────────── */}
         <div>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-            Active Users by Age Group
+            {metricLabel} by Age Group
           </p>
           {!hasAge ? (
             <NoData message="No age data available" />
           ) : view === 'table' ? (
-            <DataTable columns={AGE_COLUMNS} rows={ageData} height={180} />
+            <DataTable columns={ageColumns} rows={ageData} height={180} />
           ) : (
             <ResponsiveContainer width="100%" height={180}>
               <BarChart
@@ -125,10 +131,10 @@ export default function GenderAgeChart({ genderData, ageData }) {
                   tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}
                 />
                 <Tooltip
-                  formatter={(v) => [v.toLocaleString(), 'Users']}
+                  formatter={(v) => [v.toLocaleString(), metricLabel]}
                   contentStyle={{ borderRadius: '10px', border: '1px solid #e5e7eb', fontSize: 12 }}
                 />
-                <Bar dataKey="users" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                <Bar dataKey={metric} radius={[6, 6, 0, 0]} maxBarSize={48}>
                   {ageData.map((_, i) => (
                     <Cell key={i} fill={AGE_PALETTE[i % AGE_PALETTE.length]} />
                   ))}
