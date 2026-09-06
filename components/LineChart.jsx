@@ -28,6 +28,8 @@ const METRICS = [
   { key: 'webConvRate',     label: 'Conv. Rate · Web',      color: '#ec4899', axis: 'percent' },
   { key: 'appConvRate',     label: 'Conv. Rate · App',      color: '#14b8a6', axis: 'percent' },
   { key: 'abandonedRate',   label: 'Cart Abandon. Rate',    color: '#f43f5e', axis: 'percent' },
+  { key: 'avgBasketWeb',    label: 'Avg Basket · Web (SAR)', color: '#0ea5e9', axis: 'currency' },
+  { key: 'avgBasketApp',    label: 'Avg Basket · App (SAR)', color: '#ca8a04', axis: 'currency' },
 ]
 
 const METRIC_MAP = Object.fromEntries(METRICS.map((m) => [m.key, m]))
@@ -64,7 +66,9 @@ function CustomTooltip({ active, payload, label }) {
         const m = METRIC_MAP[entry.dataKey]
         const val = m?.axis === 'percent'
           ? `${Number(entry.value).toFixed(2)}%`
-          : Number(entry.value).toLocaleString()
+          : m?.axis === 'currency'
+            ? `SAR ${Number(entry.value).toFixed(2)}`
+            : Number(entry.value).toLocaleString()
         return (
           <div key={entry.dataKey} className="flex items-center gap-2 py-0.5">
             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: entry.color }} />
@@ -92,6 +96,7 @@ export default function LineChart({ data }) {
   const selectedMetrics = METRICS.filter((m) => selected.includes(m.key))
   const countMetrics    = selectedMetrics.filter((m) => m.axis === 'count')
   const percentMetrics  = selectedMetrics.filter((m) => m.axis === 'percent')
+  const currencyMetrics = selectedMetrics.filter((m) => m.axis === 'currency')
 
   // When selected count metrics differ hugely in magnitude (e.g. Cart
   // Abandonment ~5k vs Total Conversions ~200), the smaller ones flatten into
@@ -111,12 +116,14 @@ export default function LineChart({ data }) {
       : []
   )
 
-  const hasCount   = countMetrics.some((m) => !smallKeys.has(m.key))
-  const hasSmall   = smallKeys.size > 0
-  const hasPercent = percentMetrics.length > 0
+  const hasCount    = countMetrics.some((m) => !smallKeys.has(m.key))
+  const hasSmall    = smallKeys.size > 0
+  const hasPercent  = percentMetrics.length > 0
+  const hasCurrency = currencyMetrics.length > 0
 
   function axisFor(m) {
-    if (m.axis === 'percent') return 'percent'
+    if (m.axis === 'percent')  return 'percent'
+    if (m.axis === 'currency') return 'currency'
     return smallKeys.has(m.key) ? 'countSmall' : 'count'
   }
 
@@ -187,6 +194,18 @@ export default function LineChart({ data }) {
               width={46}
               domain={[0, 'auto']}
               tickFormatter={(v) => `${parseFloat(Number(v).toFixed(2))}%`}
+            />
+          )}
+          {hasCurrency && (
+            <YAxis
+              yAxisId="currency"
+              orientation="right"
+              tick={{ fontSize: 11, fill: '#9ca3af' }}
+              axisLine={false}
+              tickLine={false}
+              width={48}
+              domain={[0, 'auto']}
+              tickFormatter={(v) => Math.round(v).toLocaleString()}
             />
           )}
           <Tooltip content={<CustomTooltip />} />

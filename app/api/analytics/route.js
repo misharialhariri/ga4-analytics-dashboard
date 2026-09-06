@@ -109,11 +109,12 @@ export async function GET(request) {
         limit: timeSeriesLimit,
       }),
 
-      // ── Daily time series by platform (for Web/iOS/Android breakdown) ──────
+      // ── Daily time series by platform (for Web/iOS/Android breakdown, and
+      // Average Basket · Web/App) ─────────────────────────────────────────────
       runReport({
         startDate: currentStart, endDate: currentEnd,
         dimensions: [{ name: 'date' }, { name: 'platform' }],
-        metrics: [{ name: 'sessions' }, { name: 'ecommercePurchases' }],
+        metrics: [{ name: 'sessions' }, { name: 'ecommercePurchases' }, { name: 'purchaseRevenue' }],
         orderBys: [{ dimension: { dimensionName: 'date' } }],
         limit: timeSeriesLimit * 5,
       }),
@@ -457,14 +458,15 @@ export async function GET(request) {
     // Build platform lookup: { [date]: { webSessions, iosSessions, ... } }
     const platByDate = {}
     ;(platformTimeSeries.rows ?? []).forEach((row) => {
-      const date     = row.dimensionValues[0].value
-      const plat     = row.dimensionValues[1].value
-      const sess     = parseInt(row.metricValues[0].value, 10)
-      const purch    = parseInt(row.metricValues[1].value, 10)
-      if (!platByDate[date]) platByDate[date] = { webSessions: 0, iosSessions: 0, androidSessions: 0, webConversions: 0, appConversions: 0 }
-      if (plat === 'web')     { platByDate[date].webSessions     = sess; platByDate[date].webConversions  = purch }
-      if (plat === 'iOS')     { platByDate[date].iosSessions     = sess; platByDate[date].appConversions += purch }
-      if (plat === 'Android') { platByDate[date].androidSessions = sess; platByDate[date].appConversions += purch }
+      const date    = row.dimensionValues[0].value
+      const plat    = row.dimensionValues[1].value
+      const sess    = parseInt(row.metricValues[0].value, 10)
+      const purch   = parseInt(row.metricValues[1].value, 10)
+      const revenue = parseFloat(row.metricValues[2].value ?? '0')
+      if (!platByDate[date]) platByDate[date] = { webSessions: 0, iosSessions: 0, androidSessions: 0, webConversions: 0, appConversions: 0, webRevenue: 0, appRevenue: 0 }
+      if (plat === 'web')     { platByDate[date].webSessions     = sess; platByDate[date].webConversions  = purch; platByDate[date].webRevenue  = revenue }
+      if (plat === 'iOS')     { platByDate[date].iosSessions     = sess; platByDate[date].appConversions += purch; platByDate[date].appRevenue += revenue }
+      if (plat === 'Android') { platByDate[date].androidSessions = sess; platByDate[date].appConversions += purch; platByDate[date].appRevenue += revenue }
     })
 
     // Build search lookup: { [date]: views }
@@ -482,7 +484,7 @@ export async function GET(request) {
       const purchases = parseInt(row.metricValues[4].value, 10)
       const addToCarts = parseInt(row.metricValues[5].value, 10)
       const abandoned  = Math.max(0, addToCarts - purchases)
-      const pd = platByDate[date] ?? { webSessions: 0, iosSessions: 0, androidSessions: 0, webConversions: 0, appConversions: 0 }
+      const pd = platByDate[date] ?? { webSessions: 0, iosSessions: 0, androidSessions: 0, webConversions: 0, appConversions: 0, webRevenue: 0, appRevenue: 0 }
       const appSess = pd.iosSessions + pd.androidSessions
       return {
         date,
@@ -499,6 +501,8 @@ export async function GET(request) {
         appConversions:  pd.appConversions,
         webConvRate:     pd.webSessions > 0 ? parseFloat(((pd.webConversions / pd.webSessions) * 100).toFixed(2)) : 0,
         appConvRate:     appSess > 0 ? parseFloat(((pd.appConversions / appSess) * 100).toFixed(2)) : 0,
+        avgBasketWeb:    pd.webConversions > 0 ? parseFloat((pd.webRevenue / pd.webConversions).toFixed(2)) : 0,
+        avgBasketApp:    pd.appConversions > 0 ? parseFloat((pd.appRevenue / pd.appConversions).toFixed(2)) : 0,
         searchResults:   searchByDate[date] ?? 0,
         abandoned,
         abandonedRate:   addToCarts > 0 ? parseFloat(((abandoned / addToCarts) * 100).toFixed(2)) : 0,
