@@ -224,14 +224,14 @@ export async function GET(request) {
       runReport({
         startDate: currentStart, endDate: currentEnd,
         dimensions: [{ name: 'platform' }],
-        metrics: [{ name: 'ecommercePurchases' }, { name: 'sessions' }],
+        metrics: [{ name: 'ecommercePurchases' }, { name: 'sessions' }, { name: 'purchaseRevenue' }],
       }),
 
       // ── Platform purchases: previous period ───────────────────────────────
       runReport({
         startDate: prevStart, endDate: prevEnd,
         dimensions: [{ name: 'platform' }],
-        metrics: [{ name: 'ecommercePurchases' }, { name: 'sessions' }],
+        metrics: [{ name: 'ecommercePurchases' }, { name: 'sessions' }, { name: 'purchaseRevenue' }],
       }),
 
       // ── Top products by revenue ────────────────────────────────────────────
@@ -402,7 +402,12 @@ export async function GET(request) {
     function purchaseRate(row) {
       const purchases = parseInt(row?.metricValues?.[0]?.value ?? '0', 10)
       const sess      = parseInt(row?.metricValues?.[1]?.value ?? '0', 10)
-      return { purchases, sess, rate: sess > 0 ? (purchases / sess) * 100 : 0 }
+      const revenue   = parseFloat(row?.metricValues?.[2]?.value ?? '0')
+      return {
+        purchases, sess, revenue,
+        rate:      sess > 0 ? (purchases / sess) * 100 : 0,
+        avgBasket: purchases > 0 ? revenue / purchases : 0,
+      }
     }
 
     // Web
@@ -411,13 +416,18 @@ export async function GET(request) {
 
     // App = iOS + Android combined
     function addPlatforms(report, ...platforms) {
-      let purchases = 0, sess = 0
+      let purchases = 0, sess = 0, revenue = 0
       platforms.forEach((p) => {
         const r = platformRow(report, p)
         purchases += parseInt(r?.metricValues?.[0]?.value ?? '0', 10)
         sess      += parseInt(r?.metricValues?.[1]?.value ?? '0', 10)
+        revenue   += parseFloat(r?.metricValues?.[2]?.value ?? '0')
       })
-      return { purchases, sess, rate: sess > 0 ? (purchases / sess) * 100 : 0 }
+      return {
+        purchases, sess, revenue,
+        rate:      sess > 0 ? (purchases / sess) * 100 : 0,
+        avgBasket: purchases > 0 ? revenue / purchases : 0,
+      }
     }
     const appCur = addPlatforms(platformConvCur, 'iOS', 'Android')
     const appPrv = addPlatforms(platformConvPrv, 'iOS', 'Android')
@@ -669,10 +679,14 @@ export async function GET(request) {
         { label: 'Search Results',                current: curSearchCount,                 previous: prevSearchCount,                format: 'number'  },
         { label: 'Conversion (Website)',          current: webCur.purchases,               previous: webPrv.purchases,               format: 'number'  },
         { label: 'Conversion Rate (Website)',     current: webCur.rate,                    previous: webPrv.rate,                    format: 'percent' },
+        { label: 'Total Revenue (Website)',       current: webCur.revenue,                 previous: webPrv.revenue,                 format: 'currency' },
+        { label: 'Average Basket (Website)',      current: webCur.avgBasket,               previous: webPrv.avgBasket,               format: 'currency' },
         { label: 'Total Conversions',             current: Math.round(curPurchases),       previous: Math.round(prvPurchases),       format: 'number'  },
         { label: 'Total Conversion Rate',         current: curOverallRate,                 previous: prvOverallRate,                 format: 'percent' },
         { label: 'Conversion (App)',              current: appCur.purchases,               previous: appPrv.purchases,               format: 'number'  },
         { label: 'Conversion Rate (App)',         current: appCur.rate,                    previous: appPrv.rate,                    format: 'percent' },
+        { label: 'Total Revenue (App)',           current: appCur.revenue,                 previous: appPrv.revenue,                 format: 'currency' },
+        { label: 'Average Basket (App)',          current: appCur.avgBasket,               previous: appPrv.avgBasket,               format: 'currency' },
         { label: 'Bounce Rate',                   current: metricVal(cur, 3) * 100,        previous: metricVal(prv, 3) * 100,        format: 'percent', lowerIsBetter: true },
         { label: 'Source Of Traffic (Website)',   current: platSessions(platformConvCur, 'web'),     previous: platSessions(platformConvPrv, 'web'),     format: 'number' },
         { label: 'Source Of Traffic (iOS)',       current: platSessions(platformConvCur, 'iOS'),     previous: platSessions(platformConvPrv, 'iOS'),     format: 'number' },

@@ -2,8 +2,13 @@
 
 const SACO_NAVY = '#1B2965'
 
+function fmtCurrency(value) {
+  return `SAR ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
 function fmtValue(value, format) {
-  if (format === 'percent') return `${value.toFixed(2)}%`
+  if (format === 'percent')  return `${value.toFixed(2)}%`
+  if (format === 'currency') return fmtCurrency(value)
   return Math.round(value).toLocaleString()
 }
 
@@ -11,10 +16,13 @@ function ChangeCell({ current, previous, format, lowerIsBetter }) {
   if (previous === 0) return <span className="text-gray-400 text-xs">—</span>
   const diff = current - previous
   const pct = ((diff) / previous) * 100
-  const isPercent = format === 'percent'
+  const isPercent  = format === 'percent'
+  const isCurrency = format === 'currency'
   const diffStr = isPercent
     ? `${diff >= 0 ? '+' : ''}${diff.toFixed(2)}pp`
-    : `${diff >= 0 ? '+' : ''}${Math.round(diff).toLocaleString()}`
+    : isCurrency
+      ? `${diff >= 0 ? '+' : ''}${fmtCurrency(diff)}`
+      : `${diff >= 0 ? '+' : ''}${Math.round(diff).toLocaleString()}`
   const positive = lowerIsBetter ? diff < 0 : diff > 0
   const negative = lowerIsBetter ? diff > 0 : diff < 0
   const color = positive ? 'text-green-600' : negative ? 'text-red-500' : 'text-gray-400'
