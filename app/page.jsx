@@ -8,6 +8,7 @@ import LineChart            from '@/components/LineChart'
 import BarChart             from '@/components/BarChart'
 import DonutChart           from '@/components/DonutChart'
 import PlatformChart        from '@/components/PlatformChart'
+import DeviceChart          from '@/components/DeviceChart'
 import SocialSourceChart    from '@/components/SocialSourceChart'
 import StreamChart          from '@/components/StreamChart'
 import AbandonedCartsWidget    from '@/components/AbandonedCartsWidget'
@@ -436,10 +437,11 @@ function DashboardInner() {
         <SectionLabel>Devices &amp; Streams</SectionLabel>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {loading && !data ? (
-            <><SkeletonChart /><SkeletonChart /></>
+            <><SkeletonChart /><SkeletonChart /><SkeletonChart /></>
           ) : data && (
             <>
               <PlatformChart data={data.platformBreakdown} />
+              <DeviceChart   data={data.deviceBreakdown} />
               <StreamChart   data={data.streamNamesData} />
             </>
           )}

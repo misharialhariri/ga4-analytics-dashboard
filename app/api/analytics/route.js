@@ -212,6 +212,14 @@ export async function GET(request) {
         orderBys: [{ dimension: { dimensionName: 'userAgeBracket' } }],
       }),
 
+      // ── Traffic by device category (Desktop / Mobile / Tablet / Smart TV) ──
+      runReport({
+        startDate: currentStart, endDate: currentEnd,
+        dimensions: [{ name: 'deviceCategory' }],
+        metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
+        orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+      }),
+
       // ── Platform purchases: current period ────────────────────────────────
       runReport({
         startDate: currentStart, endDate: currentEnd,
@@ -325,7 +333,7 @@ export async function GET(request) {
       kpiCurrent, kpiPrev, timeSeries, platformTimeSeries, searchTimeSeries,
       topPages, sources,
       platformData, sessionSourcesRaw, streamData,
-      cartsOverall, cartsPerDevice, genderData, ageData,
+      cartsOverall, cartsPerDevice, genderData, ageData, deviceData,
       platformConvCur, platformConvPrv, productData,
       cartsPrev, searchCur, searchPrev,
       funnelViewItemCur, funnelAddToCartCur, funnelBeginCheckoutCur, funnelPurchaseCur,
@@ -603,6 +611,15 @@ export async function GET(request) {
         sessions: parseInt(row.metricValues[1].value, 10),
       }))
 
+    // ── Process: device category (Desktop / Mobile / Tablet / Smart TV) ────
+    const deviceBreakdown = (deviceData.rows ?? [])
+      .map((row) => ({
+        device:   row.dimensionValues[0].value || 'Unknown',
+        sessions: parseInt(row.metricValues[0].value, 10),
+        users:    parseInt(row.metricValues[1].value, 10),
+      }))
+      .filter((d) => d.sessions > 0)
+
     // ── Process: product performance ──────────────────────────────────────
     const productPerformance = (productData.rows ?? [])
       .filter((row) => {
@@ -739,6 +756,7 @@ export async function GET(request) {
       topPagesData,
       trafficSourcesData,
       platformBreakdown,
+      deviceBreakdown,
       sessionSourcesData,
       streamNamesData,
       abandonedCartsData,
